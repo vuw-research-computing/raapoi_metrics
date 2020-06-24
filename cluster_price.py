@@ -6,6 +6,7 @@ from datetime import timedelta
 import numpy as np
 from datetime import datetime, timedelta 
 from io import StringIO
+import time
 
 
 startdate = '2019-01-01'
@@ -18,6 +19,26 @@ aws_cost = aws_cost.sort_values(by=['Per_Hour'])
 gibikibi = 1048576  # One GiBibyte in KibiBytes
 mibikibi = 1024  #one MibiByte in Kibibytes
 gibimibi = 1024 # one gibibyte in mibibytes
+
+def timeformat(timelist):
+    timeoutlist=[]
+    for i, timein in enumerate(timelist):
+        #format tims from slurms [DD-[HH:]]MM:SS to always having fields eg 01:20.456 to 00 days 00:01:20.456
+        if pd.isnull(timein):
+            timeout = '00 days 00:00:00'
+        elif timein.count('-')==1:
+            timeout = timein.replace('-', ' days ')
+        elif timein.count(':')==1:
+            timeout = '00 days 00:'+timein
+        elif timein.count(':')==2:
+            timeout = '00 days '+timein
+        else:
+            print(timein)
+            1/0 #error! weird time function
+        timeoutlist.append(timeout)
+
+    return timeoutlist
+
 
 def user_usage(user,startdate):
     print(user)
@@ -128,15 +149,26 @@ def user_usage(user,startdate):
     #                     'cpu_request':cpu_request_list,
     #                     'gib_request':mem_request_list,
     #                     'aws_cost':costs}
-    df['user']=user
-    df['group']=user_group
-    df['starttime']=start_time_list
-    df['cpu_hours']=cpu_hours
-    df['gib_hours']=gib_hours
-    df['runtime_hours']=time_taken_hours
-    df['cpu_request']=cpu_request_list
-    df['gib_request']=mem_request_list
-    df['aws_cost']=costs
+    if numjobs==0:
+        df['user']=user
+        df['group']=user_group
+        df['starttime']=np.nan
+        df['cpu_hours']=np.nan
+        df['gib_hours']=np.nan
+        df['runtime_hours']=np.nan
+        df['cpu_request']=np.nan
+        df['gib_request']=np.nan
+        df['aws_cost']=np.nan
+    else:
+        df['user']=user
+        df['group']=user_group
+        df['starttime']=start_time_list
+        df['cpu_hours']=cpu_hours
+        df['gib_hours']=gib_hours
+        df['runtime_hours']=time_taken_hours
+        df['cpu_request']=cpu_request_list
+        df['gib_request']=mem_request_list
+        df['aws_cost']=costs
     return [df]
 
 
@@ -150,7 +182,7 @@ usersdf=usersdf.drop(usersdf.index[0]) #remove all the ------ ----- -----
 usernames=list(usersdf.User)
 
 all_jobs_df = pd.DataFrame([],index=[0])
-# usernames=['jiaowa']
+# usernames=['andre']
 all_strings=''
 
 if use_currentdate == True:
@@ -168,6 +200,28 @@ for user in usernames:
     if user not in ['leinma']:  #TODO!  This seems tricky to solve, removed users still show up in "sacctmgr show user" but not in "sacct -S 2019-01-01 --format="jobid%30,Elapsed,Start,NCPUS,MaxRSS,MaxVMSize" -u leinma"
         [all_jobs_f] = user_usage(user, startdate) 
         all_jobs_df  = pd.concat([all_jobs_df, all_jobs_f ],sort=False)
+
+# t0 = time.time()
+# #efficenicy is (TotalCPU/ncpu)/Elapsed
+# elapsed_seconds = pd.to_timedelta(timeformat(all_jobs_df.Elapsed)).dt.total_seconds()
+# cpu_t_seconds = pd.to_timedelta(timeformat(all_jobs_df.TotalCPU)).dt.total_seconds() 
+# all_jobs_df['cpu_efficency'] = (cpu_t_seconds/all_jobs_df.NCPUS) / elapsed_seconds *100
+# t1 = time.time()
+# print('eff calc time:')
+# print(t1-t0)
+# 1/0
+
+t0 = time.time()
+#efficenicy is (TotalCPU/ncpu)/Elapsed
+all_jobs_df.Elapsed = pd.to_timedelta(timeformat(all_jobs_df.Elapsed))
+all_jobs_df.TotalCPU = pd.to_timedelta(timeformat(all_jobs_df.TotalCPU))
+all_jobs_df.NCPUS = pd.to_numeric(all_jobs_df.NCPUS) 
+all_jobs_df['cpu_efficency'] = (all_jobs_df.TotalCPU/all_jobs_df.NCPUS) / all_jobs_df.Elapsed *100
+t1 = time.time()
+print('eff calc time:')
+print(t1-t0)
+
+
 
 # # Convert all_strings to pd.dataframe to make de duping easier
 # stringdata = StringIO(all_strings)
