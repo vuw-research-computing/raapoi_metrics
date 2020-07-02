@@ -45,10 +45,35 @@ def user_usage(user,startdate):
     #get user's assigned group - we have to do via os as currently all slurm users run as user
     group_string = subprocess.run(['groups',user],stdout=subprocess.PIPE).stdout.decode('utf-8')
     user_group = group_string.strip('\n').split(' ')[-1]
-    sacct_string = subprocess.run(['sacct --units=G -S ' + startdate + ' --format="jobid%30,Elapsed%15,Start,NCPUS,MaxRSS,MaxVMSize,Partition,ReqCPUS,AllocCPUS,TotalCPU%15,ReqMem,State%10,End" -u '+user + '|grep -v ext'],shell=True,stdout=subprocess.PIPE).stdout.decode('utf-8')
+    #TODO use -p for create | seperators between fields
+    sacct_string = subprocess.run(['sacct --units=G -S ' + startdate + ' --format="jobid%30,Elapsed%15,Start,NNodes,NCPUS,MaxRSS,MaxVMSize,Partition,ReqCPUS,AllocCPUS,TotalCPU%15,CPUtime,ReqMem,State%10,End" -u '+user + '|grep -v ext'],shell=True,stdout=subprocess.PIPE).stdout.decode('utf-8')
     sacct_stringio=StringIO(sacct_string)
     df=pd.read_fwf(sacct_stringio)
     df=df.drop(df.index[0]) #remove all the ------ ----- -----
+
+    #compress
+#                          JobID         Elapsed               Start      NCPUS     MaxRSS  MaxVMSize  Partition  ReqCPUS  AllocCPUS        TotalCPU     ReqMem      State                 End 
+# ------------------------------ --------------- ------------------- ---------- ---------- ---------- ---------- -------- ---------- --------------- ---------- ---------- ------------------- 
+#                       99162_14        00:03:57 2019-03-13T23:31:36          2                         parallel        1          2       03:57.290  3145728Kc  COMPLETED 2019-03-13T23:35:33 
+#                 99162_14.batch        00:03:57 2019-03-13T23:31:36          2    136524K   1447464K                   2          2       03:57.286  3145728Kc  COMPLETED 2019-03-13T23:35:33 
+#to
+#                          JobID         Elapsed               Start      NCPUS     MaxRSS  MaxVMSize  Partition  ReqCPUS  AllocCPUS        TotalCPU     ReqMem      State                 End 
+# ------------------------------ --------------- ------------------- ---------- ---------- ---------- ---------- -------- ---------- --------------- ---------- ---------- ------------------- 
+#                       99162_14        00:03:57 2019-03-13T23:31:36          2    136524K   1447464K   parallel        1          2       03:57.290  3145728Kc  COMPLETED 2019-03-13T23:35:33 
+#                 99162_14.batch        00:03:57 2019-03-13T23:31:36          2    136524K   1447464K                   2          2       03:57.286  3145728Kc  COMPLETED 2019-03-13T23:35:33 
+
+
+#OR
+#                          JobID         Elapsed               Start   NNodes      NCPUS     MaxRSS  MaxVMSize  Partition  ReqCPUS  AllocCPUS        TotalCPU     ReqMem      State                 End 
+# ------------------------------ --------------- ------------------- -------- ---------- ---------- ---------- ---------- -------- ---------- --------------- ---------- ---------- ------------------- 
+#                         357284        00:00:13 2020-06-30T16:24:20        5         10                         parallel       10         10       00:08.045     3072Mn     FAILED 2020-06-30T16:24:33 
+#                   357284.batch        00:00:13 2020-06-30T16:24:20        1          2      1.38M    154.73M                   2          2       00:04.635     3072Mn     FAILED 2020-06-30T16:24:33 
+#                  357284.extern        00:00:13 2020-06-30T16:24:20        5         10      1.15M    154.46M                  10         10       00:00.017     3072Mn  COMPLETED 2020-06-30T16:24:33 
+#                       357284.0        00:00:08 2020-06-30T16:24:26        4          4      1.18M    221.47M                   4          4       00:03.391     3072Mn  COMPLETED 2020-06-30T16:24:34
+
+# TotalCPU / CPutime= cpu efficiency
+# .batch_maxRSS / reqmem*nodes (or cores?) = mem_efficiency
+
 
     df = df[df.MaxVMSize.notna()] #Drop NaN value MaxVMSize, which is extraneous output
     costs = []
