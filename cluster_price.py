@@ -45,7 +45,7 @@ def user_usage(user,startdate):
     #get user's assigned group - we have to do via os as currently all slurm users run as user
     group_string = subprocess.run(['groups',user],stdout=subprocess.PIPE).stdout.decode('utf-8')
     user_group = group_string.strip('\n').split(' ')[-1]
-    sacct_string = subprocess.run(['sacct -S ' + startdate + ' --format="jobid%30,Elapsed,Start,NCPUS,MaxRSS,MaxVMSize,Partition,ReqCPUS,AllocCPUS,TotalCPU,ReqMem,State,End" -u '+user + '|grep -v ext'],shell=True,stdout=subprocess.PIPE).stdout.decode('utf-8')
+    sacct_string = subprocess.run(['sacct --units=G -S ' + startdate + ' --format="jobid%30,Elapsed%15,Start,NCPUS,MaxRSS,MaxVMSize,Partition,ReqCPUS,AllocCPUS,TotalCPU%15,ReqMem,State%10,End" -u '+user + '|grep -v ext'],shell=True,stdout=subprocess.PIPE).stdout.decode('utf-8')
     sacct_stringio=StringIO(sacct_string)
     df=pd.read_fwf(sacct_stringio)
     df=df.drop(df.index[0]) #remove all the ------ ----- -----
@@ -59,7 +59,10 @@ def user_usage(user,startdate):
 
     #bad iterating over a df, TODO make better
     for row in df.itertuples():
-        cpu_request = int(row.NCPUS)
+        try:
+            cpu_request = int(row.NCPUS)
+        except:
+            1/0
         if 'G' in row.MaxVMSize:
             memory_request = float(row.MaxVMSize.strip('G'))
         if 'M' in row.MaxVMSize:
