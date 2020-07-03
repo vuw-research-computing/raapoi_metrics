@@ -40,7 +40,22 @@ def timeformat(timelist):
     return timeoutlist
 
 
-def collate_saact(df):
+def memfix(inmem):
+    # takes 1.38M or nan and returns
+    #1.38 or 0
+    if pd.isnull(inmem):
+        outmem=0
+    else:
+        outmem=float(inmem.strip('M'))
+    return outmem
+
+def cleanjobid(jobid):
+    #takes 99162_14 or 99162_14.batch etc and returns
+    # 99162_14 or 99162_14
+    jobid = jobid.split('.',1)[0]
+    return jobid
+
+def collate_saact(indf):
     #     #compress
     #                          JobID         Elapsed               Start      NCPUS     MaxRSS  MaxVMSize  Partition  ReqCPUS  AllocCPUS        TotalCPU     ReqMem      State                 End 
     # ------------------------------ --------------- ------------------- ---------- ---------- ---------- ---------- -------- ---------- --------------- ---------- ---------- ------------------- 
@@ -61,115 +76,136 @@ def collate_saact(df):
     #                  357284.extern        00:00:13 2020-06-30T16:24:20        5         10      1.15M    154.46M                  10         10       00:00.017     3072Mn  COMPLETED 2020-06-30T16:24:33 
     #                       357284.0        00:00:08 2020-06-30T16:24:26        4          4      1.18M    221.47M                   4          4       00:03.391     3072Mn  COMPLETED 2020-06-30T16:24:34
 
+    column_names=list(indf.columns)
+    df = pd.DataFrame(columns=column_names)  # empty df with indf column names
+    rootid='xx'
+    rowkeep = df[:1]
+    #All memory amounts are in M, so we can strip it out of MaxRSS and MaxVMSize
+    indf['MaxRSS'] = indf['MaxRSS'].map(lambda x: memfix(x))
+    indf['MaxVMSize'] = indf['MaxVMSize'].map(lambda x: memfix(x))
+
+    for idx,row in indf.iterrows():  #yes I know this is basically the worst, can't think of how to do it better right now
+        inJobID=cleanjobid(row.JobID)
+        if rootid != inJobID: #means we have probabably switched to new root id
+            rootid=inJobID
+            df=df.append(rowkeep, ignore_index = True)  #TODO this will be horrid slow, uses dicts for more speed if needed
+            rowkeep = row
+
+        else:  #keep the biggest MaxRSS and MaxVMSize in the job 
+            if row.MaxRSS > rowkeep.MaxRSS:
+                rowkeep.MaxRSS=row.MaxRSS
+            if row.MaxVMSize > rowkeep.MaxVMSize:
+                rowkeep.MaxVMSize = row.MaxVMSize    
+
     # TotalCPU / CPutime= cpu efficiency
     # .batch_maxRSS / reqmem*nodes (or cores?) = mem_efficiency
     # df = df[df.MaxVMSize.notna()] #Drop NaN value MaxVMSize, which is extraneous output
     
-    for row in df.itertuples():
     
-    costs = []
-    cpu_request_list = []
-    mem_request_list = []
-    time_taken_hours = []
-    start_time_list =[]
+    
+    # costs = []
+    # cpu_request_list = []
+    # mem_request_list = []
+    # time_taken_hours = []
+    # start_time_list =[]
 
-    #bad iterating over a df, TODO make better
-    for row in df.itertuples():
-        try:
-            cpu_request = int(row.NCPUS)
-        except:
-            1/0
-        if 'G' in row.MaxVMSize:
-            memory_request = float(row.MaxVMSize.strip('G'))
-        if 'M' in row.MaxVMSize:
-            memory_request = float(row.MaxVMSize.strip('M'))/gibimibi
-        elif 'K' in row.MaxVMSize:
-            memory_request = float(row.MaxVMSize.strip('K'))/gibikibi
-        try:
-            aws_instance = aws_cost[(aws_cost.vCPU>=cpu_request) & (aws_cost.Memory>=memory_request)].iloc[0]
-        except:
-            # no possible instance, too much memory or too much ram, in this case, get multiples of the "closest" fitting instance.
-            max_cpu = max(aws_cost.vCPU)
-            max_memory = max(aws_cost.Memory)
+    # #bad iterating over a df, TODO make better
+    # for row in df.itertuples():
+    #     try:
+    #         cpu_request = int(row.NCPUS)
+    #     except:
+    #         1/0
+    #     if 'G' in row.MaxVMSize:
+    #         memory_request = float(row.MaxVMSize.strip('G'))
+    #     if 'M' in row.MaxVMSize:
+    #         memory_request = float(row.MaxVMSize.strip('M'))/gibimibi
+    #     elif 'K' in row.MaxVMSize:
+    #         memory_request = float(row.MaxVMSize.strip('K'))/gibikibi
+    #     try:
+    #         aws_instance = aws_cost[(aws_cost.vCPU>=cpu_request) & (aws_cost.Memory>=memory_request)].iloc[0]
+    #     except:
+    #         # no possible instance, too much memory or too much ram, in this case, get multiples of the "closest" fitting instance.
+    #         max_cpu = max(aws_cost.vCPU)
+    #         max_memory = max(aws_cost.Memory)
 
-            multiples_of_cpu = cpu_request / max_cpu
-            multiples_of_memory = memory_request / max_memory
+    #         multiples_of_cpu = cpu_request / max_cpu
+    #         multiples_of_memory = memory_request / max_memory
 
-            if multiples_of_cpu > 1:
-                cpu_request = max_cpu
-            if multiples_of_memory > 1:
-                memory_request = max_memory
-            aws_instance = aws_cost[(aws_cost.vCPU>=cpu_request) & (aws_cost.Memory>=memory_request)].iloc[0]
+    #         if multiples_of_cpu > 1:
+    #             cpu_request = max_cpu
+    #         if multiples_of_memory > 1:
+    #             memory_request = max_memory
+    #         aws_instance = aws_cost[(aws_cost.vCPU>=cpu_request) & (aws_cost.Memory>=memory_request)].iloc[0]
 
-            if multiples_of_memory > multiples_of_cpu:
-                instance_multiplier = multiples_of_memory
-            else:
-                instance_multiplier = multiples_of_cpu
+    #         if multiples_of_memory > multiples_of_cpu:
+    #             instance_multiplier = multiples_of_memory
+    #         else:
+    #             instance_multiplier = multiples_of_cpu
             
-            aws_instance.Name = aws_instance.Name + ' *' + str(instance_multiplier)
-            aws_instance.vCPU = aws_instance.vCPU * instance_multiplier
-            aws_instance.Memory = aws_instance.Memory * instance_multiplier
-            aws_instance.Per_Hour = aws_instance.Per_Hour * instance_multiplier
+    #         aws_instance.Name = aws_instance.Name + ' *' + str(instance_multiplier)
+    #         aws_instance.vCPU = aws_instance.vCPU * instance_multiplier
+    #         aws_instance.Memory = aws_instance.Memory * instance_multiplier
+    #         aws_instance.Per_Hour = aws_instance.Per_Hour * instance_multiplier
 
 
-        days = 0
-        if '-' in row.Elapsed:  #we have to handle days
-            days,timestr = row.Elapsed.split('-')  # strip days which we will add later  *****
-            days=int(days)
-        else:
-            timestr = row.Elapsed
+    #     days = 0
+    #     if '-' in row.Elapsed:  #we have to handle days
+    #         days,timestr = row.Elapsed.split('-')  # strip days which we will add later  *****
+    #         days=int(days)
+    #     else:
+    #         timestr = row.Elapsed
             
-        elapsed_time = [int(e) for e in timestr.split(':')] # hours, min, sec. 
-        elapsed_time.insert(0,0)  #add days, which we have to handle manually
-        elapsed_time[0] = elapsed_time[1]//24 #get the floored quotient of hours/24  ie 89 (3.7 days) will return 3 days
-        elapsed_time[1] = elapsed_time[1]%24 #get the hour remainder
-        elapsed_time[0] = elapsed_time[0]+days # add the days we stripped earler *****
+    #     elapsed_time = [int(e) for e in timestr.split(':')] # hours, min, sec. 
+    #     elapsed_time.insert(0,0)  #add days, which we have to handle manually
+    #     elapsed_time[0] = elapsed_time[1]//24 #get the floored quotient of hours/24  ie 89 (3.7 days) will return 3 days
+    #     elapsed_time[1] = elapsed_time[1]%24 #get the hour remainder
+    #     elapsed_time[0] = elapsed_time[0]+days # add the days we stripped earler *****
 
-        rt = timedelta(days=elapsed_time[0],hours=elapsed_time[1],minutes=elapsed_time[2],seconds=elapsed_time[3])
-        rt_min = rt.total_seconds()/60
-        rt_hours = rt_min/60 
-        cost = rt_hours * aws_instance.Per_Hour
+    #     rt = timedelta(days=elapsed_time[0],hours=elapsed_time[1],minutes=elapsed_time[2],seconds=elapsed_time[3])
+    #     rt_min = rt.total_seconds()/60
+    #     rt_hours = rt_min/60 
+    #     cost = rt_hours * aws_instance.Per_Hour
 
-        costs.append(cost)
-        cpu_request_list.append(cpu_request)
-        mem_request_list.append(memory_request)
-        time_taken_hours.append(rt_hours)
+    #     costs.append(cost)
+    #     cpu_request_list.append(cpu_request)
+    #     mem_request_list.append(memory_request)
+    #     time_taken_hours.append(rt_hours)
 
-        start_time_list.append(row.Start)
+    #     start_time_list.append(row.Start)
 
-    cpu_hours = np.array(cpu_request_list) * np.array(time_taken_hours)
-    gib_hours = np.array(mem_request_list) * np.array(time_taken_hours)
+    # cpu_hours = np.array(cpu_request_list) * np.array(time_taken_hours)
+    # gib_hours = np.array(mem_request_list) * np.array(time_taken_hours)
 
-    #check for empty data and nan it
-    if not time_taken_hours:
-        time_taken_hours = [np.nan]
-    if not cpu_request_list:
-        cpu_request_list=[np.nan]
-    if not mem_request_list:
-        mem_request_list=[np.nan] 
+    # #check for empty data and nan it
+    # if not time_taken_hours:
+    #     time_taken_hours = [np.nan]
+    # if not cpu_request_list:
+    #     cpu_request_list=[np.nan]
+    # if not mem_request_list:
+    #     mem_request_list=[np.nan] 
 
-    numjobs = len(cpu_hours)
+    # numjobs = len(cpu_hours)
 
-    if numjobs==0:
-        df['user']=user
-        df['group']=user_group
-        df['starttime']=np.nan
-        df['cpu_hours']=np.nan
-        df['gib_hours']=np.nan
-        df['runtime_hours']=np.nan
-        df['cpu_request']=np.nan
-        df['gib_request']=np.nan
-        df['aws_cost']=np.nan
-    else:
-        df['user']=user
-        df['group']=user_group
-        df['starttime']=start_time_list
-        df['cpu_hours']=cpu_hours
-        df['gib_hours']=gib_hours
-        df['runtime_hours']=time_taken_hours
-        df['cpu_request']=cpu_request_list
-        df['gib_request']=mem_request_list
-        df['aws_cost']=costs
+    # if numjobs==0:
+    #     df['user']=user
+    #     df['group']=user_group
+    #     df['starttime']=np.nan
+    #     df['cpu_hours']=np.nan
+    #     df['gib_hours']=np.nan
+    #     df['runtime_hours']=np.nan
+    #     df['cpu_request']=np.nan
+    #     df['gib_request']=np.nan
+    #     df['aws_cost']=np.nan
+    # else:
+    #     df['user']=user
+    #     df['group']=user_group
+    #     df['starttime']=start_time_list
+    #     df['cpu_hours']=cpu_hours
+    #     df['gib_hours']=gib_hours
+    #     df['runtime_hours']=time_taken_hours
+    #     df['cpu_request']=cpu_request_list
+    #     df['gib_request']=mem_request_list
+    #     df['aws_cost']=costs
 
 def user_usage(user,startdate):
     print(user)
@@ -183,9 +219,18 @@ def user_usage(user,startdate):
     df=df.drop(df.index[0]) #remove all the ------ ----- -----
 
 
+    t0 = time.time()
+    newdf=collate_saact(df)
+    t1 = time.time()
+    print('df calc time:')
+    print(t1-t0)
+    1/0
+
+    
 
 
-    df = df[df.MaxVMSize.notna()] #Drop NaN value MaxVMSize, which is extraneous output
+
+    df = df[df.MaxVMSize.notna()] #Drop NaN value MaxVMSize, which is extraneous output - effectivly removes the "root" jobid - which in the otehr method we keep instead and base off.
     costs = []
     cpu_request_list = []
     mem_request_list = []
@@ -302,7 +347,7 @@ usersdf=usersdf.drop(usersdf.index[0]) #remove all the ------ ----- -----
 usernames=list(usersdf.User)
 
 all_jobs_df = pd.DataFrame([],index=[0])
-# usernames=['andre']
+usernames=['andre']
 all_strings=''
 
 if use_currentdate == True:
