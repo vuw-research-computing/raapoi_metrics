@@ -84,18 +84,38 @@ def collate_saact(indf):
     indf['MaxRSS'] = indf['MaxRSS'].map(lambda x: memfix(x))
     indf['MaxVMSize'] = indf['MaxVMSize'].map(lambda x: memfix(x))
 
-    for idx,row in indf.iterrows():  #yes I know this is basically the worst, can't think of how to do it better right now
-        inJobID=cleanjobid(row.JobID)
-        if rootid != inJobID: #means we have probabably switched to new root id
-            rootid=inJobID
-            df=df.append(rowkeep, ignore_index = True)  #TODO this will be horrid slow, uses dicts for more speed if needed
-            rowkeep = row
+    #Fix all job IDs to be 23 23 23 from 23 23.batch 23.0
+    indf['JobID'] = indf['JobID'].map(lambda x: cleanjobid(x))
+    df_agg = indf.groupby('JobID').agg({
+    'JobID': lambda x: x.iloc[0],
+    'Elapsed': np.max,
+    'Start': lambda x: x.iloc[0],  #first one in group
+    'NNodes': lambda x: x.iloc[0],
+    'MaxRSS' : np.max,
+    'MaxVMSize' : np.max,
+    'Partition': lambda x: x.iloc[0],
+    'ReqCPUS': lambda x: x.iloc[0],
+    'AllocCPUS': lambda x: x.iloc[0],
+    'TotalCPU': np.max,
+    'ReqMem': lambda x: x.iloc[0],
+    'State': lambda x: x.iloc[0],
+    'End': lambda x: x.iloc[0]
+    })
 
-        else:  #keep the biggest MaxRSS and MaxVMSize in the job 
-            if row.MaxRSS > rowkeep.MaxRSS:
-                rowkeep.MaxRSS=row.MaxRSS
-            if row.MaxVMSize > rowkeep.MaxVMSize:
-                rowkeep.MaxVMSize = row.MaxVMSize    
+    # indf.drop_duplicates(subset='JobID', keep='first')
+
+    # for idx,row in indf.iterrows():  #yes I know this is basically the worst, can't think of how to do it better right now
+    #     inJobID=cleanjobid(row.JobID)
+    #     if rootid != inJobID: #means we have probabably switched to new root id
+    #         rootid=inJobID
+    #         df=df.append(rowkeep, ignore_index = True)  #TODO this will be horrid slow, uses dicts for more speed if needed
+    #         rowkeep = row
+
+    #     else:  #keep the biggest MaxRSS and MaxVMSize in the job 
+    #         if row.MaxRSS > rowkeep.MaxRSS:
+    #             rowkeep.MaxRSS=row.MaxRSS
+    #         if row.MaxVMSize > rowkeep.MaxVMSize:
+    #             rowkeep.MaxVMSize = row.MaxVMSize    
 
     # TotalCPU / CPutime= cpu efficiency
     # .batch_maxRSS / reqmem*nodes (or cores?) = mem_efficiency
@@ -218,13 +238,7 @@ def user_usage(user,startdate):
     df=pd.read_fwf(sacct_stringio)
     df=df.drop(df.index[0]) #remove all the ------ ----- -----
 
-
-    t0 = time.time()
     newdf=collate_saact(df)
-    t1 = time.time()
-    print('df calc time:')
-    print(t1-t0)
-    1/0
 
     
 
