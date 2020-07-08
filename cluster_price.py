@@ -13,8 +13,11 @@ startdate = '2019-01-01'
 use_currentdate = False # set to false to regenerate the entire dataset from the startdate. Use_currentdate assumes this has been running regulary via cron etc
 overlap_length = 30 # days of overlap - when using the current date and appending the dataset, use this as the overlap to account from long running jobs this should be longer than max runtime
 
+#old cost sheet
 aws_cost = pd.read_csv('aws_cost_2019.csv')
 aws_cost = aws_cost.sort_values(by=['Per_Hour'])
+
+#new cost sheet
 
 gibikibi = 1048576  # One GiBibyte in KibiBytes
 mibikibi = 1024  #one MibiByte in Kibibytes
@@ -184,8 +187,13 @@ def user_usage(user,startdate,calcOld=False):
     print(t1-t0, end='')
     sacct_stringio=StringIO(sacct_string)
     # df=pd.read_fwf(sacct_stringio)
-    df=pd.read_csv(sacct_stringio,sep='|')
-    # df=df.drop(df.index[0]) #remove all the ------ ----- -----
+
+    #check for invalid userid = users removed!
+    if not sacct_string=='':
+        df=pd.read_csv(sacct_stringio,sep='|')
+    else:
+        print(' ### Warning! user:',user,' has been removed from sacct ### ',end='')
+        1/0
 
     newdf=collate_saact(df)
 
@@ -278,6 +286,8 @@ def user_usage(user,startdate,calcOld=False):
     if not df.empty:
         print(' Old aws cost: ',end='')
         print(df.aws_cost.sum(),end='')
+    
+
     return [df, newdf]
 
 
@@ -292,7 +302,7 @@ usernames=list(usersdf.User)
 
 all_jobs_df = pd.DataFrame([],index=[0])
 all_jobs_newdf = pd.DataFrame([],index=[0])
-usernames=['where']
+# usernames=['andre']
 all_strings=''
 
 if use_currentdate == True:
@@ -307,22 +317,25 @@ if use_currentdate == True:
     # old_allstrings=pd.read_csv('all_strings.csv')
 
 for user in usernames:
-    if user not in ['leinma']:  #TODO!  This seems tricky to solve, removed users still show up in "sacctmgr show user" but not in "sacct -S 2019-01-01 --format="jobid%30,Elapsed,Start,NCPUS,MaxRSS,MaxVMSize" -u leinma"
+    userexists = subprocess.run(['sacct','-u',user],stdout=subprocess.PIPE).stdout.decode('utf-8')  # returns stuff for existing users and '' for users who have been deleted
+    if userexists!='':  #TODO!  This seems tricky to solve, removed users still show up in "sacctmgr show user" but not in "sacct -S 2019-01-01 --format="jobid%30,Elapsed,Start,NCPUS,MaxRSS,MaxVMSize" -u leinma"
         print(user, end = '')
         t0 = time.time()
-        [all_jobs_f,newdf] = user_usage(user, startdate, calcOld=True) 
+        [all_jobs_f,newdf] = user_usage(user, startdate, calcOld=False) 
         all_jobs_df  = pd.concat([all_jobs_df, all_jobs_f ],sort=False)
         all_jobs_newdf  = pd.concat([all_jobs_newdf, newdf ],sort=False)
         t1 = time.time()
         print('  pycalc time:', end='')
         print(t1-t0)
+    else:
+        print('### User: ', user, ' has been removed from sacct but probbaly not sacctmgr!  ###',end='')
 
 t0 = time.time()
 #efficenicy is (TotalCPU/ncpu)/Elapsed
 try:
     all_jobs_df['cpu_efficency'] = (all_jobs_df.TotalCPU/all_jobs_df.NCPUS) / all_jobs_df.Elapsed *100
 except:
-    print('no all jobs?')
+    print('warning no jobs?')
 all_jobs_newdf['cpu_efficency'] = (all_jobs_newdf.TotalCPU/all_jobs_newdf.ReqCPUS) / all_jobs_newdf.Elapsed *100
 t1 = time.time()
 print('eff calc time:', end='')
