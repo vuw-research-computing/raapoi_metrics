@@ -150,6 +150,8 @@ def collate_saact(indf):
     #Fix all job IDs to be 23 23 23 from 23 23.batch 23.0
     indf['JobID'] = indf['JobID'].map(lambda x: cleanjobid(x))
     df_agg = indf.groupby('JobID').agg({
+    'User':lambda x: x.iloc[0],
+    'Account': lambda x: x.iloc[0],
     'JobID': lambda x: x.iloc[0],
     'Elapsed': np.max,
     'Start': lambda x: x.iloc[0],  #first one in group
@@ -165,22 +167,20 @@ def collate_saact(indf):
     'State': lambda x: x.iloc[0],
     'End': lambda x: x.iloc[0]
     })
-    # df_agg1 = df_agg.map(lambda x: aws_cost_equiv(x) )
     df_agg['aws_cost'] = df_agg.apply(aws_cost_equiv, axis = 1) 
-    
     return df_agg
 
 
 def user_usage(user,startdate):
-    print(user)
     #get user's assigned group - we have to do via os as currently all slurm users run as user
     group_string = subprocess.run(['groups',user],stdout=subprocess.PIPE).stdout.decode('utf-8')
     user_group = group_string.strip('\n').split(' ')[-1]
     #TODO use -p for create | seperators between fields
-    sacct_string = subprocess.run(['sacct --units=M -T -S ' + startdate + ' --format="jobid%30,Elapsed%15,Start,NNodes,NCPUS,MaxRSS,MaxVMSize,Partition,ReqCPUS,AllocCPUS,TotalCPU%15,CPUtime,ReqMem,AllocGRES,State%10,End" -u '+user + '|grep -v ext'],shell=True,stdout=subprocess.PIPE).stdout.decode('utf-8')
+    sacct_string = subprocess.run(['sacct --units=M -p -T -S ' + startdate + ' --format="jobid%30,Elapsed%15,Start,NNodes,NCPUS,MaxRSS,MaxVMSize,Partition,ReqCPUS,AllocCPUS,TotalCPU%15,CPUtime,ReqMem,AllocGRES,State%10,End, User, Account" -u '+user + '|grep -v ext'],shell=True,stdout=subprocess.PIPE).stdout.decode('utf-8')
     sacct_stringio=StringIO(sacct_string)
-    df=pd.read_fwf(sacct_stringio)
-    df=df.drop(df.index[0]) #remove all the ------ ----- -----
+    # df=pd.read_fwf(sacct_stringio)
+    df=pd.read_csv(sacct_stringio,sep='|')
+    # df=df.drop(df.index[0]) #remove all the ------ ----- -----
 
     newdf=collate_saact(df)
 
@@ -197,12 +197,7 @@ def user_usage(user,startdate):
             cpu_request = int(row.NCPUS)
         except:
             1/0
-        if 'G' in row.MaxVMSize:
-            memory_request = float(row.MaxVMSize.strip('G'))
-        if 'M' in row.MaxVMSize:
-            memory_request = float(row.MaxVMSize.strip('M'))/gibimibi
-        elif 'K' in row.MaxVMSize:
-            memory_request = float(row.MaxVMSize.strip('K'))/gibikibi
+        memory_request = row.MaxVMSize/gibimibi
         try:
             aws_instance = aws_cost[(aws_cost.vCPU>=cpu_request) & (aws_cost.Memory>=memory_request)].iloc[0]
         except:
@@ -230,20 +225,7 @@ def user_usage(user,startdate):
             aws_instance.Per_Hour = aws_instance.Per_Hour * instance_multiplier
 
 
-        days = 0
-        if '-' in row.Elapsed:  #we have to handle days
-            days,timestr = row.Elapsed.split('-')  # strip days which we will add later  *****
-            days=int(days)
-        else:
-            timestr = row.Elapsed
-            
-        elapsed_time = [int(e) for e in timestr.split(':')] # hours, min, sec. 
-        elapsed_time.insert(0,0)  #add days, which we have to handle manually
-        elapsed_time[0] = elapsed_time[1]//24 #get the floored quotient of hours/24  ie 89 (3.7 days) will return 3 days
-        elapsed_time[1] = elapsed_time[1]%24 #get the hour remainder
-        elapsed_time[0] = elapsed_time[0]+days # add the days we stripped earler *****
-
-        rt = timedelta(days=elapsed_time[0],hours=elapsed_time[1],minutes=elapsed_time[2],seconds=elapsed_time[3])
+        rt = row.Elapsed
         rt_min = rt.total_seconds()/60
         rt_hours = rt_min/60 
         cost = rt_hours * aws_instance.Per_Hour
@@ -278,6 +260,7 @@ def user_usage(user,startdate):
         df['cpu_request']=np.nan
         df['gib_request']=np.nan
         df['aws_cost']=np.nan
+        1/0
     else:
         df['user']=user
         df['group']=user_group
@@ -288,7 +271,7 @@ def user_usage(user,startdate):
         df['cpu_request']=cpu_request_list
         df['gib_request']=mem_request_list
         df['aws_cost']=costs
-    return [df]
+    return [df, newdf]
 
 
 users_string = subprocess.run(['sacctmgr','show','user'],stdout=subprocess.PIPE).stdout.decode('utf-8')
@@ -301,6 +284,7 @@ usersdf=usersdf.drop(usersdf.index[0]) #remove all the ------ ----- -----
 usernames=list(usersdf.User)
 
 all_jobs_df = pd.DataFrame([],index=[0])
+all_jobs_newdf = pd.DataFrame([],index=[0])
 usernames=['andre']
 all_strings=''
 
@@ -317,8 +301,14 @@ if use_currentdate == True:
 
 for user in usernames:
     if user not in ['leinma']:  #TODO!  This seems tricky to solve, removed users still show up in "sacctmgr show user" but not in "sacct -S 2019-01-01 --format="jobid%30,Elapsed,Start,NCPUS,MaxRSS,MaxVMSize" -u leinma"
-        [all_jobs_f] = user_usage(user, startdate) 
+        print(user, end = '')
+        t0 = time.time()
+        [all_jobs_f,newdf] = user_usage(user, startdate) 
         all_jobs_df  = pd.concat([all_jobs_df, all_jobs_f ],sort=False)
+        all_jobs_newdf  = pd.concat([all_jobs_newdf, newdf ],sort=False)
+        t1 = time.time()
+        print(' calc time:', end='')
+        print(t1-t0)
 
 # t0 = time.time()
 # #efficenicy is (TotalCPU/ncpu)/Elapsed
@@ -332,12 +322,13 @@ for user in usernames:
 
 t0 = time.time()
 #efficenicy is (TotalCPU/ncpu)/Elapsed
-all_jobs_df.Elapsed = pd.to_timedelta(timeformat(all_jobs_df.Elapsed))
-all_jobs_df.TotalCPU = pd.to_timedelta(timeformat(all_jobs_df.TotalCPU))
-all_jobs_df.NCPUS = pd.to_numeric(all_jobs_df.NCPUS) 
+# all_jobs_df.Elapsed = pd.to_timedelta(timeformat(all_jobs_df.Elapsed))
+# all_jobs_df.TotalCPU = pd.to_timedelta(timeformat(all_jobs_df.TotalCPU))
+# all_jobs_df.NCPUS = pd.to_numeric(all_jobs_df.NCPUS) 
 all_jobs_df['cpu_efficency'] = (all_jobs_df.TotalCPU/all_jobs_df.NCPUS) / all_jobs_df.Elapsed *100
+all_jobs_newdf['cpu_efficency'] = (all_jobs_newdf.TotalCPU/all_jobs_newdf.ReqCPUS) / all_jobs_newdf.Elapsed *100
 t1 = time.time()
-print('eff calc time:')
+print('eff calc time:', end='')
 print(t1-t0)
 
 
@@ -349,5 +340,6 @@ print(t1-t0)
 if use_currentdate == True:  #concat old and new df, removing duplicates
     all_jobs_df = pd.concat([old_df,all_jobs_df],sort=False).drop_duplicates().reset_index(drop=True)
 all_jobs_df.to_csv('all_jobs.csv')
+all_jobs_newdf.to_csv('all_jobs_new_calc.csv')
 # with open("allstrings.txt", "w") as text_file:
 #     print(f"{all_strings}", file=text_file)
