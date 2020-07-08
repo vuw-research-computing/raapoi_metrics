@@ -69,6 +69,7 @@ def memfix(inmem):
 def cleanjobid(jobid):
     #takes 99162_14 or 99162_14.batch etc and returns
     # 99162_14 or 99162_14
+    jobid=str(jobid)
     jobid = jobid.split('.',1)[0]
     return jobid
 
@@ -100,8 +101,8 @@ def aws_cost_equiv(row):
         if multiples_of_cpu > 1:
             cpu_request = max_cpu
         if multiples_of_memory > 1:
-            memory_request = max_memory
-        aws_instance = aws_cost[(aws_cost.vCPU>=cpu_request) & (aws_cost.Memory>=memory_request)].iloc[0]
+            mem_req_per_node = max_memory
+        aws_instance = aws_cost[(aws_cost.vCPU>=cpu_request) & (aws_cost.Memory>=mem_req_per_node)].iloc[0]
 
         if multiples_of_memory > multiples_of_cpu:
             instance_multiplier = multiples_of_memory
@@ -167,16 +168,20 @@ def collate_saact(indf):
     'State': lambda x: x.iloc[0],
     'End': lambda x: x.iloc[0]
     })
-    df_agg['aws_cost'] = df_agg.apply(aws_cost_equiv, axis = 1) 
+    if not df_agg.empty:
+        df_agg['aws_cost'] = df_agg.apply(aws_cost_equiv, axis = 1) 
     return df_agg
 
 
-def user_usage(user,startdate):
+def user_usage(user,startdate,calcOld=False):
     #get user's assigned group - we have to do via os as currently all slurm users run as user
-    group_string = subprocess.run(['groups',user],stdout=subprocess.PIPE).stdout.decode('utf-8')
-    user_group = group_string.strip('\n').split(' ')[-1]
-    #TODO use -p for create | seperators between fields
+    # group_string = subprocess.run(['groups',user],stdout=subprocess.PIPE).stdout.decode('utf-8')
+    # user_group = group_string.strip('\n').split(' ')[-1]
+    t0 = time.time()
     sacct_string = subprocess.run(['sacct --units=M -p -T -S ' + startdate + ' --format="jobid%30,Elapsed%15,Start,NNodes,NCPUS,MaxRSS,MaxVMSize,Partition,ReqCPUS,AllocCPUS,TotalCPU%15,CPUtime,ReqMem,AllocGRES,State%10,End, User, Account" -u '+user + '|grep -v ext'],shell=True,stdout=subprocess.PIPE).stdout.decode('utf-8')
+    t1 = time.time()
+    print('  saact time: ', end='')
+    print(t1-t0, end='')
     sacct_stringio=StringIO(sacct_string)
     # df=pd.read_fwf(sacct_stringio)
     df=pd.read_csv(sacct_stringio,sep='|')
@@ -184,93 +189,95 @@ def user_usage(user,startdate):
 
     newdf=collate_saact(df)
 
-    df = df[df.MaxVMSize.notna()] #Drop NaN value MaxVMSize, which is extraneous output - effectivly removes the "root" jobid - which in the otehr method we keep instead and base off.
-    costs = []
-    cpu_request_list = []
-    mem_request_list = []
-    time_taken_hours = []
-    start_time_list =[]
+    if calcOld ==True:
+        df = df[df.MaxVMSize.notna()] #Drop NaN value MaxVMSize, which is extraneous output - effectivly removes the "root" jobid - which in the otehr method we keep instead and base off.
+        costs = []
+        cpu_request_list = []
+        mem_request_list = []
+        time_taken_hours = []
+        start_time_list =[]
 
-    #bad iterating over a df, TODO make better
-    for row in df.itertuples():
-        try:
-            cpu_request = int(row.NCPUS)
-        except:
-            1/0
-        memory_request = row.MaxVMSize/gibimibi
-        try:
-            aws_instance = aws_cost[(aws_cost.vCPU>=cpu_request) & (aws_cost.Memory>=memory_request)].iloc[0]
-        except:
-            # no possible instance, too much memory or too much ram, in this case, get multiples of the "closest" fitting instance.
-            max_cpu = max(aws_cost.vCPU)
-            max_memory = max(aws_cost.Memory)
+        #bad iterating over a df, TODO make better
+        for row in df.itertuples():
+            try:
+                cpu_request = int(row.NCPUS)
+            except:
+                1/0
+            memory_request = row.MaxVMSize/gibimibi
+            try:
+                aws_instance = aws_cost[(aws_cost.vCPU>=cpu_request) & (aws_cost.Memory>=memory_request)].iloc[0]
+            except:
+                # no possible instance, too much memory or too much ram, in this case, get multiples of the "closest" fitting instance.
+                max_cpu = max(aws_cost.vCPU)
+                max_memory = max(aws_cost.Memory)
 
-            multiples_of_cpu = cpu_request / max_cpu
-            multiples_of_memory = memory_request / max_memory
+                multiples_of_cpu = cpu_request / max_cpu
+                multiples_of_memory = memory_request / max_memory
 
-            if multiples_of_cpu > 1:
-                cpu_request = max_cpu
-            if multiples_of_memory > 1:
-                memory_request = max_memory
-            aws_instance = aws_cost[(aws_cost.vCPU>=cpu_request) & (aws_cost.Memory>=memory_request)].iloc[0]
+                if multiples_of_cpu > 1:
+                    cpu_request = max_cpu
+                if multiples_of_memory > 1:
+                    memory_request = max_memory
+                aws_instance = aws_cost[(aws_cost.vCPU>=cpu_request) & (aws_cost.Memory>=memory_request)].iloc[0]
 
-            if multiples_of_memory > multiples_of_cpu:
-                instance_multiplier = multiples_of_memory
-            else:
-                instance_multiplier = multiples_of_cpu
-            
-            aws_instance.Name = aws_instance.Name + ' *' + str(instance_multiplier)
-            aws_instance.vCPU = aws_instance.vCPU * instance_multiplier
-            aws_instance.Memory = aws_instance.Memory * instance_multiplier
-            aws_instance.Per_Hour = aws_instance.Per_Hour * instance_multiplier
+                if multiples_of_memory > multiples_of_cpu:
+                    instance_multiplier = multiples_of_memory
+                else:
+                    instance_multiplier = multiples_of_cpu
+                
+                aws_instance.Name = aws_instance.Name + ' *' + str(instance_multiplier)
+                aws_instance.vCPU = aws_instance.vCPU * instance_multiplier
+                aws_instance.Memory = aws_instance.Memory * instance_multiplier
+                aws_instance.Per_Hour = aws_instance.Per_Hour * instance_multiplier
 
 
-        rt = row.Elapsed
-        rt_min = rt.total_seconds()/60
-        rt_hours = rt_min/60 
-        cost = rt_hours * aws_instance.Per_Hour
+            rt = row.Elapsed
+            rt_min = rt.total_seconds()/60
+            rt_hours = rt_min/60 
+            cost = rt_hours * aws_instance.Per_Hour
 
-        costs.append(cost)
-        cpu_request_list.append(cpu_request)
-        mem_request_list.append(memory_request)
-        time_taken_hours.append(rt_hours)
+            costs.append(cost)
+            cpu_request_list.append(cpu_request)
+            mem_request_list.append(memory_request)
+            time_taken_hours.append(rt_hours)
 
-        start_time_list.append(row.Start)
+            start_time_list.append(row.Start)
 
-    cpu_hours = np.array(cpu_request_list) * np.array(time_taken_hours)
-    gib_hours = np.array(mem_request_list) * np.array(time_taken_hours)
+        cpu_hours = np.array(cpu_request_list) * np.array(time_taken_hours)
+        gib_hours = np.array(mem_request_list) * np.array(time_taken_hours)
 
-    #check for empty data and nan it
-    if not time_taken_hours:
-        time_taken_hours = [np.nan]
-    if not cpu_request_list:
-        cpu_request_list=[np.nan]
-    if not mem_request_list:
-        mem_request_list=[np.nan] 
+        #check for empty data and nan it
+        if not time_taken_hours:
+            time_taken_hours = [np.nan]
+        if not cpu_request_list:
+            cpu_request_list=[np.nan]
+        if not mem_request_list:
+            mem_request_list=[np.nan] 
 
-    numjobs = len(cpu_hours)
+        numjobs = len(cpu_hours)
 
-    if numjobs==0:
-        df['user']=user
-        df['group']=user_group
-        df['starttime']=np.nan
-        df['cpu_hours']=np.nan
-        df['gib_hours']=np.nan
-        df['runtime_hours']=np.nan
-        df['cpu_request']=np.nan
-        df['gib_request']=np.nan
-        df['aws_cost']=np.nan
-        1/0
-    else:
-        df['user']=user
-        df['group']=user_group
-        df['starttime']=start_time_list
-        df['cpu_hours']=cpu_hours
-        df['gib_hours']=gib_hours
-        df['runtime_hours']=time_taken_hours
-        df['cpu_request']=cpu_request_list
-        df['gib_request']=mem_request_list
-        df['aws_cost']=costs
+        if numjobs==0:
+            df['starttime']=np.nan
+            df['cpu_hours']=np.nan
+            df['gib_hours']=np.nan
+            df['runtime_hours']=np.nan
+            df['cpu_request']=np.nan
+            df['gib_request']=np.nan
+            df['aws_cost']=np.nan
+        else:
+            df['starttime']=start_time_list
+            df['cpu_hours']=cpu_hours
+            df['gib_hours']=gib_hours
+            df['runtime_hours']=time_taken_hours
+            df['cpu_request']=cpu_request_list
+            df['gib_request']=mem_request_list
+            df['aws_cost']=costs
+    if not newdf.empty:
+        print(' New aws cost: ',end='')
+        print(newdf.aws_cost.sum() ,end='')
+    if not df.empty:
+        print(' Old aws cost: ',end='')
+        print(df.aws_cost.sum(),end='')
     return [df, newdf]
 
 
@@ -285,7 +292,7 @@ usernames=list(usersdf.User)
 
 all_jobs_df = pd.DataFrame([],index=[0])
 all_jobs_newdf = pd.DataFrame([],index=[0])
-usernames=['andre']
+usernames=['where']
 all_strings=''
 
 if use_currentdate == True:
@@ -303,29 +310,19 @@ for user in usernames:
     if user not in ['leinma']:  #TODO!  This seems tricky to solve, removed users still show up in "sacctmgr show user" but not in "sacct -S 2019-01-01 --format="jobid%30,Elapsed,Start,NCPUS,MaxRSS,MaxVMSize" -u leinma"
         print(user, end = '')
         t0 = time.time()
-        [all_jobs_f,newdf] = user_usage(user, startdate) 
+        [all_jobs_f,newdf] = user_usage(user, startdate, calcOld=True) 
         all_jobs_df  = pd.concat([all_jobs_df, all_jobs_f ],sort=False)
         all_jobs_newdf  = pd.concat([all_jobs_newdf, newdf ],sort=False)
         t1 = time.time()
-        print(' calc time:', end='')
+        print('  pycalc time:', end='')
         print(t1-t0)
-
-# t0 = time.time()
-# #efficenicy is (TotalCPU/ncpu)/Elapsed
-# elapsed_seconds = pd.to_timedelta(timeformat(all_jobs_df.Elapsed)).dt.total_seconds()
-# cpu_t_seconds = pd.to_timedelta(timeformat(all_jobs_df.TotalCPU)).dt.total_seconds() 
-# all_jobs_df['cpu_efficency'] = (cpu_t_seconds/all_jobs_df.NCPUS) / elapsed_seconds *100
-# t1 = time.time()
-# print('eff calc time:')
-# print(t1-t0)
-# 1/0
 
 t0 = time.time()
 #efficenicy is (TotalCPU/ncpu)/Elapsed
-# all_jobs_df.Elapsed = pd.to_timedelta(timeformat(all_jobs_df.Elapsed))
-# all_jobs_df.TotalCPU = pd.to_timedelta(timeformat(all_jobs_df.TotalCPU))
-# all_jobs_df.NCPUS = pd.to_numeric(all_jobs_df.NCPUS) 
-all_jobs_df['cpu_efficency'] = (all_jobs_df.TotalCPU/all_jobs_df.NCPUS) / all_jobs_df.Elapsed *100
+try:
+    all_jobs_df['cpu_efficency'] = (all_jobs_df.TotalCPU/all_jobs_df.NCPUS) / all_jobs_df.Elapsed *100
+except:
+    print('no all jobs?')
 all_jobs_newdf['cpu_efficency'] = (all_jobs_newdf.TotalCPU/all_jobs_newdf.ReqCPUS) / all_jobs_newdf.Elapsed *100
 t1 = time.time()
 print('eff calc time:', end='')
