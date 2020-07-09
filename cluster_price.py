@@ -13,11 +13,29 @@ startdate = '2019-01-01'
 use_currentdate = False # set to false to regenerate the entire dataset from the startdate. Use_currentdate assumes this has been running regulary via cron etc
 overlap_length = 30 # days of overlap - when using the current date and appending the dataset, use this as the overlap to account from long running jobs this should be longer than max runtime
 
+def burstfinder(invcpu):
+    vcpu_params = re.split('vCPUs|for a|burst',invcpu)
+    if len(vcpu_params) == 4:
+        burst = vcpu_params.strip()
+    else:
+        burst = pd.to_timedelta('nan')
+    return burst
+
+
+
 #old cost sheet
 aws_cost = pd.read_csv('aws_cost_2019.csv')
 aws_cost = aws_cost.sort_values(by=['Per_Hour'])
 
-#new cost sheet
+# #new cost sheet
+aws_cost = pd.read_csv('Amazon EC2 Instance ComparisonJune2020.csv')
+aws_cost[['vCPUs', 'burst']]=aws_cost.vCPUs.str.split("for a",expand=True)
+aws_cost['vCPUs'] = aws_cost['vCPUs'].map(  lambda x: int(x.replace('vCPUs',''))  )
+xstr = lambda s: '' if s is None else str(s)
+aws_cost['burst'] = aws_cost['burst'].map(  lambda x: xstr(x)+'burst')  
+aws_cost['burst'] = aws_cost['burst'].map(  lambda x: pd.to_timedelta(x.replace('burst',''))  )
+aws_cost['Memory'] = aws_cost['Memory'].map(  lambda x: float(x.replace('GiB',''))  )
+aws_cost = aws_cost.rename(columns={'vCPUs':'vCPU', 'Linux On Demand cost':'Per Hour'})
 
 gibikibi = 1048576  # One GiBibyte in KibiBytes
 mibikibi = 1024  #one MibiByte in Kibibytes
@@ -283,7 +301,7 @@ def user_usage(user,startdate,calcOld=False):
     if not newdf.empty:
         print(' New aws cost: ',end='')
         print(newdf.aws_cost.sum() ,end='')
-    if not df.empty:
+    if 'aws_cost' in df.keys():
         print(' Old aws cost: ',end='')
         print(df.aws_cost.sum(),end='')
     
@@ -302,7 +320,7 @@ usernames=list(usersdf.User)
 
 all_jobs_df = pd.DataFrame([],index=[0])
 all_jobs_newdf = pd.DataFrame([],index=[0])
-# usernames=['andre']
+usernames=['andre']
 all_strings=''
 
 if use_currentdate == True:
@@ -321,7 +339,7 @@ for user in usernames:
     if userexists!='':  #TODO!  This seems tricky to solve, removed users still show up in "sacctmgr show user" but not in "sacct -S 2019-01-01 --format="jobid%30,Elapsed,Start,NCPUS,MaxRSS,MaxVMSize" -u leinma"
         print(user, end = '')
         t0 = time.time()
-        [all_jobs_f,newdf] = user_usage(user, startdate, calcOld=False) 
+        [all_jobs_f,newdf] = user_usage(user, startdate, calcOld=True) 
         all_jobs_df  = pd.concat([all_jobs_df, all_jobs_f ],sort=False)
         all_jobs_newdf  = pd.concat([all_jobs_newdf, newdf ],sort=False)
         t1 = time.time()
