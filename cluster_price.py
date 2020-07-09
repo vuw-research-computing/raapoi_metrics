@@ -35,7 +35,13 @@ xstr = lambda s: '' if s is None else str(s)
 aws_cost['burst'] = aws_cost['burst'].map(  lambda x: xstr(x)+'burst')  
 aws_cost['burst'] = aws_cost['burst'].map(  lambda x: pd.to_timedelta(x.replace('burst',''))  )
 aws_cost['Memory'] = aws_cost['Memory'].map(  lambda x: float(x.replace('GiB',''))  )
-aws_cost = aws_cost.rename(columns={'vCPUs':'vCPU', 'Linux On Demand cost':'Per Hour'})
+aws_cost = aws_cost.rename(columns={'vCPUs':'vCPU', 'Linux On Demand cost':'Per_Hour'})
+aws_cost['Per_Hour'] = aws_cost['Per_Hour'].map( lambda x: x.replace('$',''))
+aws_cost['Per_Hour'] = aws_cost['Per_Hour'].map( lambda x: x.replace('hourly',''))
+aws_cost['Per_Hour'] = aws_cost['Per_Hour'].map( lambda x: x.replace('unavailable','nan'))
+aws_cost['Per_Hour'] = aws_cost['Per_Hour'].map( lambda x: float(x))
+aws_cost = aws_cost.sort_values(by=['Per_Hour'])
+aws_cost.dropna(subset=['Per_Hour'], inplace=True)
 
 gibikibi = 1048576  # One GiBibyte in KibiBytes
 mibikibi = 1024  #one MibiByte in Kibibytes
