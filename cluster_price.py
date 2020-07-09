@@ -34,6 +34,7 @@ aws_cost['vCPUs'] = aws_cost['vCPUs'].map(  lambda x: int(x.replace('vCPUs',''))
 xstr = lambda s: '' if s is None else str(s)
 aws_cost['burst'] = aws_cost['burst'].map(  lambda x: xstr(x)+'burst')  
 aws_cost['burst'] = aws_cost['burst'].map(  lambda x: pd.to_timedelta(x.replace('burst',''))  )
+aws_cost['burstable'] = aws_cost['burst'].map(  lambda x: not pd.isnull(x))  
 aws_cost['Memory'] = aws_cost['Memory'].map(  lambda x: float(x.replace('GiB',''))  )
 aws_cost = aws_cost.rename(columns={'vCPUs':'vCPU', 'Linux On Demand cost':'Per_Hour'})
 aws_cost['Per_Hour'] = aws_cost['Per_Hour'].map( lambda x: x.replace('$',''))
@@ -41,6 +42,7 @@ aws_cost['Per_Hour'] = aws_cost['Per_Hour'].map( lambda x: x.replace('hourly',''
 aws_cost['Per_Hour'] = aws_cost['Per_Hour'].map( lambda x: x.replace('unavailable','nan'))
 aws_cost['Per_Hour'] = aws_cost['Per_Hour'].map( lambda x: float(x))
 aws_cost = aws_cost.sort_values(by=['Per_Hour'])
+aws_cost = aws_cost[~aws_cost['Physical Processor'].str.contains('Graviton')]  #remove ARM processors as they are harder to compare  
 aws_cost.dropna(subset=['Per_Hour'], inplace=True)
 
 gibikibi = 1048576  # One GiBibyte in KibiBytes
@@ -117,7 +119,12 @@ def aws_cost_equiv(row):
     memory_used = row.MaxRSS/gibimibi  #always M now
     try:
         aws_instance = aws_cost[(aws_cost.vCPU>=cpu_request) & (aws_cost.Memory>=mem_req_per_node)].iloc[0]
+        if not pd.isnull(aws_instance.burst):
+            if row.Elapsed > aws_instance.burst:  #outside of burst time
+                aws_instance = aws_cost[((aws_cost.vCPU>=cpu_request) & (aws_cost.Memory>=mem_req_per_node)) & (aws_cost.burstable==False)].iloc[0]
+                
     except:
+        print('### Warning jobid',row.JobID,' Does not fit an aws instance for costing, dubious measures ensue!### ',end='')
         # no possible instance, too much memory or too much ram, in this case, get multiples of the "closest" fitting instance.
         max_cpu = max(aws_cost.vCPU)
         max_memory = max(aws_cost.Memory)
@@ -326,7 +333,7 @@ usernames=list(usersdf.User)
 
 all_jobs_df = pd.DataFrame([],index=[0])
 all_jobs_newdf = pd.DataFrame([],index=[0])
-usernames=['andre']
+# usernames=['andre']
 all_strings=''
 
 if use_currentdate == True:
