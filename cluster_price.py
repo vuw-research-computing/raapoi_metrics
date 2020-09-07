@@ -103,6 +103,7 @@ def cleanjobid(jobid):
     return jobid
 
 def aws_cost_equiv(row):
+    print_cost=False
     if row.ReqCPUS == '1': # if just 1 cpu - there are matching aws instances, all other cases use alloccpus as some people try non hyperthreading jobs which will require alloc cpus on AWS as well.
         cpu_request = int(row.ReqCPUS)
     else:
@@ -116,6 +117,7 @@ def aws_cost_equiv(row):
     elif 'c' in row.ReqMem:  #memory per core
         mem_req_per_node = (mem_req_per_node * cpu_request) / nodes
     
+    cpu_request = cpu_request / nodes  #we want per node cpu_request
     memory_used = row.MaxRSS/gibimibi  #always M now
     try:
         aws_instance = aws_cost[(aws_cost.vCPU>=cpu_request) & (aws_cost.Memory>=mem_req_per_node)].iloc[0]
@@ -124,7 +126,9 @@ def aws_cost_equiv(row):
                 aws_instance = aws_cost[((aws_cost.vCPU>=cpu_request) & (aws_cost.Memory>=mem_req_per_node)) & (aws_cost.burstable==False)].iloc[0]
                 
     except:
-        print('### Warning jobid',row.JobID,' Does not fit an aws instance for costing, dubious measures ensue!### ',end='')
+        if row.Elapsed.total_seconds() > 10:  #warn about dubious aws fits it elapsed is actually meaningful. i.e. not just erroneous user entries.
+            print('### Warning jobid',row.JobID,' Does not fit an aws instance for costing, dubious measures ensue!### ',end='')
+            print_cost = True
         # no possible instance, too much memory or too much ram, in this case, get multiples of the "closest" fitting instance.
         max_cpu = max(aws_cost.vCPU)
         max_memory = max(aws_cost.Memory)
@@ -153,6 +157,8 @@ def aws_cost_equiv(row):
     rt_hours = rt_min/60 
     cost = rt_hours * aws_instance.Per_Hour
     cost = cost * nodes
+    if print_cost == True:
+        print('AWS_est_cost =  ',cost,'  ',end='')
     # row['aws_cost']  = cost
     return cost
 
