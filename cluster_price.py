@@ -218,7 +218,7 @@ def user_usage(user,startdate,calcOld=False):
     # group_string = subprocess.run(['groups',user],stdout=subprocess.PIPE).stdout.decode('utf-8')
     # user_group = group_string.strip('\n').split(' ')[-1]
     t0 = time.time()
-    sacct_string = subprocess.run(['sacct --units=M -p -T -S ' + startdate + ' --format="jobid%30,Elapsed%15,Start,NNodes,NCPUS,MaxRSS,MaxVMSize,Partition,ReqCPUS,AllocCPUS,TotalCPU%15,CPUtime,ReqMem,AllocGRES,State%10,End, User, Account" -u '+user + '|grep -v ext'],shell=True,stdout=subprocess.PIPE).stdout.decode('utf-8')
+    sacct_string = subprocess.run(['sacct --units=M -p -T -S ' + startdate + ' --format="jobid%30,Elapsed%15,Start,NNodes,NCPUS,MaxRSS,MaxVMSize,Partition,ReqCPUS,AllocCPUS,TotalCPU%15,CPUtime,ReqMem,AllocGRES,State%10,End, User, Account" -u '+user + '--noconvert ' + '|grep -v ext'],shell=True,stdout=subprocess.PIPE).stdout.decode('utf-8')
     t1 = time.time()
     print('  saact time: ', end='')
     print(t1-t0, end='')
