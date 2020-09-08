@@ -116,6 +116,9 @@ def aws_cost_equiv(row):
         pass 
     elif 'c' in row.ReqMem:  #memory per core
         mem_req_per_node = (mem_req_per_node * cpu_request) / nodes
+        #If only 1 cpu is requested, we my need to double the mem_req as slurm will auto allocated 2 cpus and the memory will be 2x
+        if cpu_request == 1 :
+           mem_req_per_node = 2 * mem_req_per_node 
     
     cpu_request = cpu_request / nodes  #we want per node cpu_request
     memory_used = row.MaxRSS/gibimibi  #always M now
