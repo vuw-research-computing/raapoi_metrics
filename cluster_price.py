@@ -379,6 +379,24 @@ print('eff calc time:', end='')
 print(t1-t0)
 
 
+# Post process for easier analysis.
+def totalmem(row):
+    '''
+    Take a MemReq like 3072Mc or 3072Mn and convert it to total memory requested
+    then convert memory to gibibytes
+    '''
+    if pd.isna(row.ReqMem):
+        totalmemreq = np.nan
+    elif 'n' in row.ReqMem: #memory per node
+        totalmemreq = int( row.ReqMem.strip('Mn') ) * row.NNodes
+    elif 'c' in row.ReqMem:  #memory per core
+        totalmemreq = int( row.ReqMem.strip('Mc') ) * row.AllocCPUS
+    totalmemreq = totalmemreq / gibimibi
+    return totalmemreq
+all_jobs_newdf['TotalReqMemGiB'] = all_jobs_newdf.apply(totalmem, axis=1)
+all_jobs_newdf['ElapsedSeconds'] = all_jobs_newdf.apply(lambda x: x['Elapsed'].total_seconds, axis=1)
+all_jobs_newdf['ElapsedSeconds'] = all_jobs_newdf.apply(lambda x: x['TotalCPU'].total_seconds, axis=1)
+
 
 # # Convert all_strings to pd.dataframe to make de duping easier
 # stringdata = StringIO(all_strings)
