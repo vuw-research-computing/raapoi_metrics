@@ -397,8 +397,8 @@ def totalmem(row):
     totalmemreq = totalmemreq / gibimibi
     return totalmemreq
 all_jobs_newdf['TotalReqMemGiB'] = all_jobs_newdf.apply(totalmem, axis=1)
-all_jobs_newdf['ElapsedSeconds'] = all_jobs_newdf.apply(lambda x: x['Elapsed'].total_seconds, axis=1)
-all_jobs_newdf['ElapsedSeconds'] = all_jobs_newdf.apply(lambda x: x['TotalCPU'].total_seconds, axis=1)
+all_jobs_newdf['ElapsedSeconds'] = all_jobs_newdf.apply(lambda x: x['Elapsed'].total_seconds(), axis=1)
+all_jobs_newdf['ElapsedSeconds'] = all_jobs_newdf.apply(lambda x: x['TotalCPU'].total_seconds(), axis=1)
 
 
 # # Convert all_strings to pd.dataframe to make de duping easier
