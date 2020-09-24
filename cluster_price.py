@@ -200,6 +200,7 @@ def collate_saact(indf):
     'Elapsed': np.max,
     'Start': lambda x: x.iloc[0],  #first one in group
     'NNodes': lambda x: x.iloc[0],
+    'NTasks': lambda x: x.iloc[0],
     'MaxRSS' : np.max,
     'MaxVMSize' : np.max,
     'Partition': lambda x: x.iloc[0],
