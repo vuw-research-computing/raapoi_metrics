@@ -403,6 +403,10 @@ all_jobs_newdf['TotalReqMemGiB'] = all_jobs_newdf.apply(totalmem, axis=1)
 all_jobs_newdf['ElapsedSeconds'] = all_jobs_newdf.apply(lambda x: x['Elapsed'].total_seconds(), axis=1)
 all_jobs_newdf['TotalCPUSeconds'] = all_jobs_newdf.apply(lambda x: x['TotalCPU'].total_seconds(), axis=1)
 
+#Add Elapsed time column(in hours)
+all_jobs_newdf['ElapsedHours'] = all_jobs_newdf['ElapsedSeconds']/3600.0
+#Add Allocated CPU hours - if requested 10 CPU for 100 Hours, but run took 10 hours and only used 5 cpu-> 10CPU still allocated for the 10 hours = 100CPU hours
+all_jobs_newdf['AllocatedCPUHours_used'] = all_jobs_newdf['ElapsedHours']*all_jobs_newdf['AllocCPUS']
 
 # # Convert all_strings to pd.dataframe to make de duping easier
 # stringdata = StringIO(all_strings)
