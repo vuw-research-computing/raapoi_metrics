@@ -157,6 +157,8 @@ def aws_cost_equiv(row):
 
     rt = row.Elapsed
     rt_min = rt.total_seconds()/60
+    if rt_min < 1:
+        rt_min=1.00  # the minimum aws run time, sub 60s are billed to 1m
     rt_hours = rt_min/60 
     cost = rt_hours * aws_instance.Per_Hour
     cost = cost * nodes
