@@ -185,12 +185,16 @@ def collate_saact(indf):
     df = pd.DataFrame(columns=column_names)  # empty df with indf column names
     rootid='xx'
     rowkeep = df[:1]
+
+    indf.drop(indf[indf['Start'] == startdate + 'T00:00:00'].index, inplace = True)
+
     #All memory amounts are in M, so we can strip it out of MaxRSS and MaxVMSize
     indf['MaxRSS'] = indf['MaxRSS'].map(lambda x: memfix(x))
     indf['MaxVMSize'] = indf['MaxVMSize'].map(lambda x: memfix(x))
 
     #timeformat_lambda
     indf['Elapsed'] = indf['Elapsed'].map(lambda x: timeformat_lambda(x))
+    indf['Timelimit'] = indf['Timelimit'].map(lambda x: timeformat_lambda(x))
     indf['TotalCPU'] = indf['TotalCPU'].map(lambda x: timeformat_lambda(x))
 
     #Fix all job IDs to be 23 23 23 from 23 23.batch 23.0
@@ -200,6 +204,7 @@ def collate_saact(indf):
     'Account': lambda x: x.iloc[0],
     'JobID': lambda x: x.iloc[0],
     'Elapsed': np.max,
+    'Timelimit': np.max,
     'Start': lambda x: x.iloc[0],  #first one in group
     'NNodes': lambda x: x.iloc[0],
     'NTasks': np.max,
@@ -224,7 +229,7 @@ def user_usage(user,startdate,calcOld=False):
     # group_string = subprocess.run(['groups',user],stdout=subprocess.PIPE).stdout.decode('utf-8')
     # user_group = group_string.strip('\n').split(' ')[-1]
     t0 = time.time()
-    sacct_string = subprocess.run(['sacct --units=M -p -T -S ' + startdate + ' --format="jobid%30,Elapsed%15,Start,NNodes,NCPUS,NTasks,MaxRSS,MaxVMSize,Partition,ReqCPUS,AllocCPUS,TotalCPU%15,CPUtime,ReqMem,AllocGRES,State%10,End, User, Account" -u '+user + ' --noconvert ' + '|grep -v ext'],shell=True,stdout=subprocess.PIPE).stdout.decode('utf-8')
+    sacct_string = subprocess.run(['sacct --units=M -p -T -S ' + startdate + ' --format="jobid%30,Elapsed%15,Timelimit,Start,NNodes,NCPUS,NTasks,MaxRSS,MaxVMSize,Partition,ReqCPUS,AllocCPUS,TotalCPU%15,CPUtime,ReqMem,AllocGRES,State%10,End, User, Account" -u '+user + ' --noconvert ' + '|grep -v ext'],shell=True,stdout=subprocess.PIPE).stdout.decode('utf-8')
     t1 = time.time()
     print('  saact time: ', end='')
     print(t1-t0, end='')
@@ -337,6 +342,9 @@ def user_usage(user,startdate,calcOld=False):
 users_string = subprocess.run(['sacctmgr','show','user','-P'],stdout=subprocess.PIPE).stdout.decode('utf-8')
 usersio=StringIO(users_string)
 usersdf=pd.read_csv(usersio,sep='|')
+# usersdf=pd.read_fwf(usersio)
+# usersdf=usersdf.drop(usersdf.index[0]) #remove all the ------ ----- -----
+#usersdf=pd.read_csv(usersio)
 
 
 usernames=list(usersdf.User)
@@ -369,21 +377,13 @@ for user in usernames:
         print('  pycalc time:', end='')
         print(t1-t0)
     else:
-        print('### User: ', user, ' has been removed from sacct but probbaly not sacctmgr!  ###',end='')
-
-t0 = time.time()
-#efficenicy is (TotalCPU/ncpu)/Elapsed
-try:
-    all_jobs_df['cpu_efficency'] = (all_jobs_df.TotalCPU/all_jobs_df.NCPUS) / all_jobs_df.Elapsed *100
-except:
-    print('warning no jobs?')
-all_jobs_newdf['cpu_efficency'] = (all_jobs_newdf.TotalCPU/all_jobs_newdf.ReqCPUS) / all_jobs_newdf.Elapsed *100
-t1 = time.time()
-print('eff calc time:', end='')
-print(t1-t0)
+        print('### User: ', user, ' has been removed from sacct but probably not sacctmgr!  ###\n',end='')
 
 
+
+# AMF: Moved post-processing section to before efficiency calculations
 # Post process for easier analysis.
+
 def totalmem(row):
     '''
     Take a MemReq like 3072Mc or 3072Mn and convert it to total memory requested
@@ -399,12 +399,42 @@ def totalmem(row):
     return totalmemreq
 all_jobs_newdf['TotalReqMemGiB'] = all_jobs_newdf.apply(totalmem, axis=1)
 all_jobs_newdf['ElapsedSeconds'] = all_jobs_newdf.apply(lambda x: x['Elapsed'].total_seconds(), axis=1)
+all_jobs_newdf['TimelimitSeconds'] = all_jobs_newdf.apply(lambda x: x['Timelimit'].total_seconds(), axis=1)
 all_jobs_newdf['TotalCPUSeconds'] = all_jobs_newdf.apply(lambda x: x['TotalCPU'].total_seconds(), axis=1)
 
 #Add Elapsed time column(in hours)
 all_jobs_newdf['ElapsedHours'] = all_jobs_newdf['ElapsedSeconds']/3600.0
 #Add Allocated CPU hours - if requested 10 CPU for 100 Hours, but run took 10 hours and only used 5 cpu-> 10CPU still allocated for the 10 hours = 100CPU hours
 all_jobs_newdf['AllocatedCPUHours_used'] = all_jobs_newdf['ElapsedHours']*all_jobs_newdf['AllocCPUS']
+
+t0 = time.time()
+
+# CPU efficiency is (TotalCPU/ncpu)/Elapsed
+try:
+    all_jobs_df['cpu_efficency'] = (all_jobs_df.TotalCPU/all_jobs_df.NCPUS) / all_jobs_df.Elapsed *100
+except:
+    print('warning no jobs?')
+all_jobs_newdf['cpu_efficency'] = (all_jobs_newdf.TotalCPU/all_jobs_newdf.ReqCPUS) / all_jobs_newdf.Elapsed *100
+
+# Memory efficiency is MaxRSS/TotalReqMemGiB converted to MiB
+# do not write to old CSV, not required
+# try:
+#     all_jobs_df['mem_efficiency'] = (all_jobs_newdf.MaxRSS / (all_jobs_newdf.TotalReqMemGiB * gibimibi)) *100
+# except:
+#     print('warning no jobs?')
+all_jobs_newdf['mem_efficiency'] = (all_jobs_newdf.MaxRSS / (all_jobs_newdf.TotalReqMemGiB * gibimibi)) *100
+
+# Time efficiency is ElapsedSeconds/TimelimitSeconds
+# do not write to old CSV, not required
+# try:
+#     all_jobs_df['time_efficiency'] = (all_jobs_newdf.ElapsedSeconds / all_jobs_newdf.TimelimitSeconds) *100
+# except:
+#     print('warning no jobs?')
+all_jobs_newdf['time_efficiency'] = (all_jobs_newdf.ElapsedSeconds / all_jobs_newdf.TimelimitSeconds) *100
+
+t1 = time.time()
+print('eff calc time:', end='')
+print(t1-t0)
 
 # # Convert all_strings to pd.dataframe to make de duping easier
 # stringdata = StringIO(all_strings)
