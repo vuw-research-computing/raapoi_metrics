@@ -22,12 +22,11 @@ def burstfinder(invcpu):
     return burst
 
 
-
 #old cost sheet
 aws_cost = pd.read_csv('aws_cost_2019.csv')
 aws_cost = aws_cost.sort_values(by=['Per_Hour'])
 
-# #new cost sheet
+#new cost sheet
 aws_cost = pd.read_csv('Amazon EC2 Instance ComparisonJune2020.csv')
 aws_cost[['vCPUs', 'burst']]=aws_cost.vCPUs.str.split("for a",expand=True)
 aws_cost['vCPUs'] = aws_cost['vCPUs'].map(  lambda x: int(x.replace('vCPUs',''))  )
