@@ -334,11 +334,9 @@ def user_usage(user,startdate,calcOld=False):
     return [df, newdf]
 
 
-users_string = subprocess.run(['sacctmgr','show','user'],stdout=subprocess.PIPE).stdout.decode('utf-8')
+users_string = subprocess.run(['sacctmgr','show','user','-P'],stdout=subprocess.PIPE).stdout.decode('utf-8')
 usersio=StringIO(users_string)
-usersdf=pd.read_fwf(usersio)
-usersdf=usersdf.drop(usersdf.index[0]) #remove all the ------ ----- -----
-#usersdf=pd.read_csv(usersio)
+usersdf=pd.read_csv(usersio,sep='|')
 
 
 usernames=list(usersdf.User)
