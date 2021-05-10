@@ -15,7 +15,7 @@ import datetime as dt
 
 parser = ap.ArgumentParser()
 parser.add_argument("-d", "--days", help="the number of days for the report output")
-parser.add_argument("-f", "--file", help="output report to a CSV file")
+# parser.add_argument("-f", "--file", help="output report to a CSV file")
 args = parser.parse_args()
 #print(args.days)
 # parser.parse_args()
@@ -23,7 +23,7 @@ args = parser.parse_args()
 # args = parser.parse_args()
 # print(args.csv)
 
-num_days = 100
+num_days = args.days
 today = dt.date.today()
 start_date = today + dt.timedelta(-num_days)
 print('Collecting job efficiency statistics')
@@ -32,7 +32,7 @@ print('Report end date: ' + today.isoformat())
 
 #pd.set_option('display.max_rows', 200, 'display.max_columns', 40, 'display.width', 200)
 today_csv = dt.datetime.now()
-#pd.set_option('use_inf_as_na', True)
+pd.set_option('use_inf_as_na', True)
 #username = 'fageal'
 username = gp.getuser()
 
