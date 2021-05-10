@@ -11,7 +11,7 @@ import datetime as dt
 # if sys.version_info[0] < 3:
 #     raise Exception("Python 3 or a more recent version is required.")
 
-def check_positive_days(value: int):
+def check_positive_days(value):
     days = int(value)
     if days < 0:
         raise ap.ArgumentTypeError("%s: Days cannot be a negative number" % value)
