@@ -1,5 +1,3 @@
-#!/home/software/apps/python/3.8.1/bin/python3
-
 import sys
 
 import pandas as pd
@@ -13,24 +11,30 @@ import datetime as dt
 # if sys.version_info[0] < 3:
 #     raise Exception("Python 3 or a more recent version is required.")
 
+def check_positive_days(value: int):
+    days = int(value)
+    if days < 0:
+        raise ap.ArgumentTypeError("%s: Days cannot be a negative number" % value)
+    return days
+
 parser = ap.ArgumentParser()
-parser.add_argument("-d", "--days", help="the number of days for the report output")
+parser.add_argument("-d", "--days", help="the number of days for the report output", default=10, type=check_positive_days)
 # parser.add_argument("-f", "--file", help="output report to a CSV file")
 args = parser.parse_args()
-#print(args.days)
-# parser.parse_args()
-# parser.add_argument('csv', help="Save output to a CSV file.")
-# args = parser.parse_args()
-# print(args.csv)
 
 num_days = args.days
 today = dt.date.today()
+earliest_start_date = dt.date(2020,1,1)
 start_date = today + dt.timedelta(-num_days)
+if (start_date < earliest_start_date):
+    start_date = earliest_start_date
+
 print('Collecting job efficiency statistics')
 print('Report start date: ' + start_date.isoformat())
 print('Report end date: ' + today.isoformat())
 
 #pd.set_option('display.max_rows', 200, 'display.max_columns', 40, 'display.width', 200)
+
 today_csv = dt.datetime.now()
 pd.set_option('use_inf_as_na', True)
 #username = 'fageal'
@@ -85,11 +89,14 @@ gdf = df.groupby(["User", "Partition", "State"], as_index=False, dropna=True).ag
 # time_eff_mean=pd.NamedAgg(column="time_efficiency", aggfunc="mean")
 # )
 
-print("================================================================================================")
-print("----------------------------------- Raapoi Efficiency Report -----------------------------------")
-print("================================================================================================")
+print("=================================================================================================")
+print("----------------------------------- Raapoi Efficiency Report ------------------------------------")
+print("=================================================================================================")
 
-print(gdf.to_string(index=False))
+if (len(gdf) != 0):
+    print(gdf.to_string(index=False))
+else:
+    print(" *** No results found. Use the -d flag to specify the number of days to use (default is 10). *** ")
 
 print("=================================================================================================")
 print("========== Support is available on the Raapoi Slack channel at https://uwrc.slack.com/ ==========")
