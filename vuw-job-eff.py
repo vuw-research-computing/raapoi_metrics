@@ -8,8 +8,6 @@ import argparse as ap
 import datetime as dt
 import subprocess
 from io import StringIO
-import re
-import time
 #import pdb; pdb.set_trace()
 
 today_csv = dt.datetime.now()
@@ -23,7 +21,8 @@ def check_positive_days(value):
 
 parser = ap.ArgumentParser(prog='vuw-job-eff', description='Raapoi Job Efficiency tool. Reports on the minimum, maximum and mean average efficiency of your Raapoi jobs for CPU, memory, and time requested.', epilog='For more information see the Raapoi Cluster Documentation: https://vuw-research-computing.github.io/raapoi-docs/')
 parser.add_argument('-d', '--days', help='number of days for the report output; end date is today, default is 10 days', default=10, type=check_positive_days)
-parser.add_argument('-f', '--file', help='save output to a CSV file, automatically generated in the current working directory', action='store_true')
+parser.add_argument('-f', '--file', help='save summary efficiency output to a CSV file, automatically generated in the current working directory', action='store_true')
+parser.add_argument('-F', '--fullfile', help='save individual job efficiency output to a CSV file, automatically generated in the current working directory', action='store_true')
 parser.add_argument('-u', '--username', help=ap.SUPPRESS, default=gp.getuser())
 args = parser.parse_args()
 
@@ -42,6 +41,7 @@ print('Collecting job efficiency statistics. This may take a minute...')
 # gibikibi = 1048576  # One GiBibyte in KibiBytes
 # mibikibi = 1024  #one MibiByte in Kibibytes
 gibimibi = 1024 # one gibibyte in mibibytes
+
 
 def timeformat_lambda(timein):
     #format times from slurms [DD-[HH:]]MM:SS to always having fields eg 01:20.456 to 00 days 00:01:20.456
@@ -81,9 +81,6 @@ def collate_saact(indf):
     df = pd.DataFrame(columns=column_names)  # empty df with indf column names
     # rootid='xx'
     # rowkeep = df[:1]
-
-    #drop rows for jobs that started running before the specified report start time
-    indf.drop(indf[indf['Start'] == start_date.isoformat() + 'T00:00:00'].index, inplace = True)
 
     #All memory amounts are in M, so we can strip it out of MaxRSS and MaxVMSize
     indf['MaxRSS'] = indf['MaxRSS'].map(lambda x: memfix(x))
@@ -126,7 +123,14 @@ def user_usage(user,start_date,calcOld=False):
     sacct_string = subprocess.run(['sacct --units=M -p -T -S ' + start_date.isoformat() + ' --format="jobid%30,Elapsed%15,Timelimit,Start,NNodes,NCPUS,NTasks,MaxRSS,MaxVMSize,Partition,ReqCPUS,AllocCPUS,TotalCPU%15,CPUtime,ReqMem,AllocGRES,State%10,End, User, Account" -u '+ username + ' --noconvert ' + '|grep -v ext'],shell=True,stdout=subprocess.PIPE).stdout.decode('utf-8')
     sacct_stringio=StringIO(sacct_string)
     df=pd.read_csv(sacct_stringio,sep='|')
+    #df['User'] = username
+    #drop rows for jobs that started running before the specified report start time
+    #df.to_csv('testing_df1.csv')
+    df.drop(df[df['Start'] == start_date.isoformat() + 'T00:00:00'].index, inplace = True)
+    df.drop(df[df['Start'] == 'Unknown'].index, inplace = True)
+    #df.to_csv('testing_df2.csv')
     newdf=collate_saact(df)
+    newdf.to_csv('testing_newdf.csv')
     return newdf
 
 def totalmem(row):
@@ -148,8 +152,8 @@ all_jobs_newdf = pd.DataFrame([],index=[0])
 newdf = user_usage(username, start_date, calcOld=True)
 all_jobs_newdf  = pd.concat([all_jobs_newdf, newdf ],sort=False)
 all_jobs_newdf.dropna(how='all', inplace=True)
-
-#all_jobs_newdf.to_csv('eff_stats_testing.csv')
+all_jobs_newdf = all_jobs_newdf.loc[(-all_jobs_newdf['State'].isin(['PENDING','RUNNING']))]
+all_jobs_newdf['State'] = all_jobs_newdf['State'].str.replace(r'CANCELLED.*$', 'CANCELLED', regex=True)
 
 if not all_jobs_newdf.empty:
 
@@ -164,7 +168,6 @@ if not all_jobs_newdf.empty:
     all_jobs_newdf['AllocatedCPUHours_used'] = all_jobs_newdf['ElapsedHours'] * all_jobs_newdf['AllocCPUS']
 
     # CPU efficiency is (TotalCPU/ncpu)/Elapsed
-
     all_jobs_newdf['cpu_efficency'] = (all_jobs_newdf.TotalCPU/all_jobs_newdf.ReqCPUS) / all_jobs_newdf.Elapsed * 100
 
     # Memory efficiency is MaxRSS/TotalReqMemGiB converted to MiB
@@ -173,27 +176,15 @@ if not all_jobs_newdf.empty:
     # Time efficiency is ElapsedSeconds/TimelimitSeconds
     all_jobs_newdf['time_efficiency'] = (all_jobs_newdf.ElapsedSeconds / all_jobs_newdf.TimelimitSeconds) * 100
 
-#all_jobs_newdf.to_csv('all_jobs_new_calc.csv')
-
-# try:
-# #    df = pd.read_csv("/nfs/scratch/admin/metrics_data/all_jobs_new_calc.csv", usecols=['Partition', 'User', 'State', 'JobID', 'Start', 'End', 'cpu_efficency', 'mem_efficiency', 'time_efficiency'], low_memory=False)
-#     df = pd.read_csv("all_jobs_new_calc.csv", usecols=['Partition', 'User', 'State', 'JobID', 'Start', 'End', 'cpu_efficency', 'mem_efficiency', 'time_efficiency'], low_memory=False)
-# except FileNotFoundError as fnf:
-#     print('Error: Input data not available.')
-#     print('Please ask for help on the Slack channel at https://uwrc.slack.com/')
-#     sys.exit(fnf)
-
 gdf = pd.DataFrame()
 
 if 'cpu_efficency' in all_jobs_newdf.columns:
     df = all_jobs_newdf[['Partition', 'User', 'State', 'JobID', 'Start', 'End', 'cpu_efficency', 'mem_efficiency', 'time_efficiency']]
 
     # Pull out the data we need - user and date range, exclude PENDING and RUNNING jobs. Replace all CANCELLED% with CANCELLED.
-    df = df.loc[(df['User'] == username)]
-    df['State'] = df['State'].str.replace(r'CANCELLED.*$', 'CANCELLED', regex=True)
-    df = df.loc[(-df['State'].isin(['PENDING','RUNNING']))]
-    df['Start'] = pd.to_datetime(df['Start'])
-    df = df.loc[(df['Start'].dt.date >= start_date)]
+    #df = df.loc[(df['User'] == username)]
+    #df['Start'] = pd.to_datetime(df['Start'])
+    #df = df.loc[(df['Start'].dt.date >= start_date)]
 
     # groupby and aggregate information
     gdf = df.groupby(['User', 'Partition', 'State'], as_index=False, dropna=True).agg(
@@ -228,8 +219,17 @@ print("=========================================================================
 # export to CSV
 if (args.file):
     try:
-        gdf.to_csv('eff_stats_' + username + '_' + today_csv.strftime('%Y%m%d_%H%M_%S') + '.csv')
+        gdf.to_csv('eff_summary_' + username + '_' + today_csv.strftime('%Y%m%d_%H%M_%S') + '.csv')
     except Exception as ex:
-        print('Error writing the CSV export file.')
+        print('Error writing the summary CSV export file.')
+        print('Raapoi help is available on the Slack channel at https://uwrc.slack.com/')
+        print(ex)
+
+# export full results to CSV
+if (args.fullfile):
+    try:
+        all_jobs_newdf.to_csv('eff_full_' + username + '_' + today_csv.strftime('%Y%m%d_%H%M_%S') + '.csv')
+    except Exception as ex:
+        print('Error writing the full CSV export file.')
         print('Raapoi help is available on the Slack channel at https://uwrc.slack.com/')
         print(ex)
