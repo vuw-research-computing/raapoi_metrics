@@ -123,14 +123,10 @@ def user_usage(user,start_date,calcOld=False):
     sacct_string = subprocess.run(['sacct --units=M -p -T -S ' + start_date.isoformat() + ' --format="jobid%30,Elapsed%15,Timelimit,Start,NNodes,NCPUS,NTasks,MaxRSS,MaxVMSize,Partition,ReqCPUS,AllocCPUS,TotalCPU%15,CPUtime,ReqMem,AllocGRES,State%10,End, User, Account" -u '+ username + ' --noconvert ' + '|grep -v ext'],shell=True,stdout=subprocess.PIPE).stdout.decode('utf-8')
     sacct_stringio=StringIO(sacct_string)
     df=pd.read_csv(sacct_stringio,sep='|')
-    #df['User'] = username
-    #drop rows for jobs that started running before the specified report start time
-    #df.to_csv('testing_df1.csv')
+    # Drop rows for jobs that started running before the specified report start time
     df.drop(df[df['Start'] == start_date.isoformat() + 'T00:00:00'].index, inplace = True)
     df.drop(df[df['Start'] == 'Unknown'].index, inplace = True)
-    #df.to_csv('testing_df2.csv')
     newdf=collate_saact(df)
-    newdf.to_csv('testing_newdf.csv')
     return newdf
 
 def totalmem(row):
@@ -150,11 +146,11 @@ def totalmem(row):
 all_jobs_newdf = pd.DataFrame([],index=[0])
 newdf = user_usage(username, start_date, calcOld=True)
 all_jobs_newdf  = pd.concat([all_jobs_newdf, newdf ],sort=False)
-#print (all_jobs_newdf)
 all_jobs_newdf.dropna(how='all', inplace=True)
 
 if not all_jobs_newdf.empty:
 
+    # Exclude PENDING and RUNNING jobs. Replace all CANCELLED% with CANCELLED.
     all_jobs_newdf = all_jobs_newdf.loc[(-all_jobs_newdf['State'].isin(['PENDING','RUNNING']))]
     all_jobs_newdf['State'] = all_jobs_newdf['State'].str.replace(r'CANCELLED.*$', 'CANCELLED', regex=True)
 
@@ -163,13 +159,13 @@ if not all_jobs_newdf.empty:
     all_jobs_newdf['TimelimitSeconds'] = all_jobs_newdf.apply(lambda x: x['Timelimit'].total_seconds(), axis=1)
     all_jobs_newdf['TotalCPUSeconds'] = all_jobs_newdf.apply(lambda x: x['TotalCPU'].total_seconds(), axis=1)
 
-    #Add Elapsed time column(in hours)
+    # Add Elapsed time column(in hours)
     all_jobs_newdf['ElapsedHours'] = all_jobs_newdf['ElapsedSeconds']/3600.0
-    #Add Allocated CPU hours - if requested 10 CPU for 100 Hours, but run took 10 hours and only used 5 cpu-> 10CPU still allocated for the 10 hours = 100CPU hours
+    # Add Allocated CPU hours - if requested 10 CPU for 100 Hours, but run took 10 hours and only used 5 cpu-> 10CPU still allocated for the 10 hours = 100CPU hours
     all_jobs_newdf['AllocatedCPUHours_used'] = all_jobs_newdf['ElapsedHours'] * all_jobs_newdf['AllocCPUS']
 
     # CPU efficiency is (TotalCPU/ncpu)/Elapsed
-    all_jobs_newdf['cpu_efficency'] = (all_jobs_newdf.TotalCPU/all_jobs_newdf.ReqCPUS) / all_jobs_newdf.Elapsed * 100
+    all_jobs_newdf['cpu_efficiency'] = (all_jobs_newdf.TotalCPU/all_jobs_newdf.ReqCPUS) / all_jobs_newdf.Elapsed * 100
 
     # Memory efficiency is MaxRSS/TotalReqMemGiB converted to MiB
     all_jobs_newdf['mem_efficiency'] = (all_jobs_newdf.MaxRSS / (all_jobs_newdf.TotalReqMemGiB * gibimibi)) * 100
@@ -179,10 +175,10 @@ if not all_jobs_newdf.empty:
 
 gdf = pd.DataFrame()
 
-if 'cpu_efficency' in all_jobs_newdf.columns:
-    df = all_jobs_newdf[['Partition', 'User', 'State', 'JobID', 'Start', 'End', 'cpu_efficency', 'mem_efficiency', 'time_efficiency']]
+if 'cpu_efficiency' in all_jobs_newdf.columns:
+    df = all_jobs_newdf[['Partition', 'User', 'State', 'JobID', 'Start', 'End', 'cpu_efficiency', 'mem_efficiency', 'time_efficiency']]
 
-    # Pull out the data we need - user and date range, exclude PENDING and RUNNING jobs. Replace all CANCELLED% with CANCELLED.
+    
     #df = df.loc[(df['User'] == username)]
     #df['Start'] = pd.to_datetime(df['Start'])
     #df = df.loc[(df['Start'].dt.date >= start_date)]
@@ -191,9 +187,9 @@ if 'cpu_efficency' in all_jobs_newdf.columns:
     gdf = df.groupby(['User', 'Partition', 'State'], as_index=False, dropna=True).agg(
             **{
                 'Num Jobs': pd.NamedAgg(column='JobID', aggfunc='count'),
-                'Min % CPU Eff': pd.NamedAgg(column='cpu_efficency', aggfunc=np.min),
-                'Max % CPU Eff': pd.NamedAgg(column='cpu_efficency', aggfunc=np.max),
-                'Mean % CPU Eff': pd.NamedAgg(column='cpu_efficency', aggfunc=np.mean),
+                'Min % CPU Eff': pd.NamedAgg(column='cpu_efficiency', aggfunc=np.min),
+                'Max % CPU Eff': pd.NamedAgg(column='cpu_efficiency', aggfunc=np.max),
+                'Mean % CPU Eff': pd.NamedAgg(column='cpu_efficiency', aggfunc=np.mean),
                 'Min % Mem Eff': pd.NamedAgg(column='mem_efficiency', aggfunc=np.min),
                 'Max % Mem Eff': pd.NamedAgg(column='mem_efficiency', aggfunc=np.max),
                 'Mean % Mem Eff': pd.NamedAgg(column='mem_efficiency', aggfunc=np.mean),
@@ -203,13 +199,20 @@ if 'cpu_efficency' in all_jobs_newdf.columns:
             }
     )
 
+    gdf_cpu = gdf[['Partition', 'User', 'State', 'Num Jobs', 'Min % CPU Eff', 'Max % CPU Eff', 'Mean % CPU Eff']]
+    gdf_mem = gdf[['Partition', 'User', 'State', 'Num Jobs', 'Min % Mem Eff', 'Max % Mem Eff', 'Mean % Mem Eff']]
+    gdf_time = gdf[['Partition', 'User', 'State', 'Num Jobs', 'Min % Time Eff', 'Max % Time Eff', 'Mean % Time Eff']]
+
 print("=================================================================================================")
 print("----------------------------------- Raapoi Efficiency Report ------------------------------------")
 print("=================================================================================================")
 
 if not gdf.empty:
-    print(gdf.to_string(index=False))
-    #print(gdf['User'].to_string)
+    print(gdf_cpu.to_string(index=False))
+    print("=================================================================================================")
+    print(gdf_mem.to_string(index=False))
+    print("=================================================================================================")
+    print(gdf_time.to_string(index=False))
 else:
     print(" *** No results found. Use the -d flag to specify the number of days to use (default is 10). *** ")
 
@@ -221,7 +224,8 @@ print("=========================================================================
 # export to CSV
 if (args.file):
     try:
-        gdf.to_csv('eff_summary_' + username + '_' + today_csv.strftime('%Y%m%d_%H%M_%S') + '.csv')
+        if not all_jobs_newdf.empty:
+            gdf.to_csv('eff_summary_' + username + '_' + today_csv.strftime('%Y%m%d_%H%M_%S') + '.csv')
     except Exception as ex:
         print('Error writing the summary CSV export file.')
         print('Raapoi help is available on the Slack channel at https://uwrc.slack.com/')
@@ -230,7 +234,8 @@ if (args.file):
 # export full results to CSV
 if (args.fullfile):
     try:
-        all_jobs_newdf.to_csv('eff_full_' + username + '_' + today_csv.strftime('%Y%m%d_%H%M_%S') + '.csv')
+        if not all_jobs_newdf.empty:
+            all_jobs_newdf.to_csv('eff_full_' + username + '_' + today_csv.strftime('%Y%m%d_%H%M_%S') + '.csv')
     except Exception as ex:
         print('Error writing the full CSV export file.')
         print('Raapoi help is available on the Slack channel at https://uwrc.slack.com/')
