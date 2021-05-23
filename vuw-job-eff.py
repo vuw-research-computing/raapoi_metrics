@@ -148,14 +148,15 @@ def totalmem(row):
     return totalmemreq
 
 all_jobs_newdf = pd.DataFrame([],index=[0])
-
 newdf = user_usage(username, start_date, calcOld=True)
 all_jobs_newdf  = pd.concat([all_jobs_newdf, newdf ],sort=False)
+#print (all_jobs_newdf)
 all_jobs_newdf.dropna(how='all', inplace=True)
-all_jobs_newdf = all_jobs_newdf.loc[(-all_jobs_newdf['State'].isin(['PENDING','RUNNING']))]
-all_jobs_newdf['State'] = all_jobs_newdf['State'].str.replace(r'CANCELLED.*$', 'CANCELLED', regex=True)
 
 if not all_jobs_newdf.empty:
+
+    all_jobs_newdf = all_jobs_newdf.loc[(-all_jobs_newdf['State'].isin(['PENDING','RUNNING']))]
+    all_jobs_newdf['State'] = all_jobs_newdf['State'].str.replace(r'CANCELLED.*$', 'CANCELLED', regex=True)
 
     all_jobs_newdf['TotalReqMemGiB'] = all_jobs_newdf.apply(totalmem, axis=1)
     all_jobs_newdf['ElapsedSeconds'] = all_jobs_newdf.apply(lambda x: x['Elapsed'].total_seconds(), axis=1)
@@ -208,6 +209,7 @@ print("=========================================================================
 
 if not gdf.empty:
     print(gdf.to_string(index=False))
+    #print(gdf['User'].to_string)
 else:
     print(" *** No results found. Use the -d flag to specify the number of days to use (default is 10). *** ")
 
