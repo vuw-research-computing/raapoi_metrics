@@ -204,7 +204,7 @@ if 'cpu_efficiency' in all_jobs_newdf.columns:
 
 print("=================================================================================================")
 print("----------------------------------- Raapoi Efficiency Report ------------------------------------")
-print("                           Report date range: " + start_date.isoformat() + " - " + today.isoformat())
+print("                   Report date range: " + start_date.isoformat() + " - " + today.isoformat() + " (last " + str(num_days) + " days)")
 print("=================================================================================================")
 
 if not gdf.empty:
