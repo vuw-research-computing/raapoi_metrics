@@ -34,8 +34,7 @@ start_date = today + dt.timedelta(-num_days)
 if (start_date < earliest_start_date):
     start_date = earliest_start_date
 
-print('Report start date: ' + start_date.isoformat())
-print('Report end date: ' + today.isoformat())
+print("=================================================================================================")
 print('Collecting job efficiency statistics. This may take a minute...')
 
 # gibikibi = 1048576  # One GiBibyte in KibiBytes
@@ -205,13 +204,20 @@ if 'cpu_efficiency' in all_jobs_newdf.columns:
 
 print("=================================================================================================")
 print("----------------------------------- Raapoi Efficiency Report ------------------------------------")
+print("                           Report date range: " + start_date.isoformat() + " - " + today.isoformat())
 print("=================================================================================================")
 
 if not gdf.empty:
+    print("CPU Efficiency (CPU requested compared to CPU used):")
+    print("-------------------------------------------------------------------------------------------------")
     print(gdf_cpu.to_string(index=False))
     print("=================================================================================================")
+    print("Memory Efficiency (memory requested compared to memory used):")
+    print("-------------------------------------------------------------------------------------------------")
     print(gdf_mem.to_string(index=False))
     print("=================================================================================================")
+    print("Time Efficiency (time requested compared to time used):")
+    print("-------------------------------------------------------------------------------------------------")
     print(gdf_time.to_string(index=False))
 else:
     print(" *** No results found. Use the -d flag to specify the number of days to use (default is 10). *** ")
