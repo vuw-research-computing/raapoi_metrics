@@ -1,4 +1,4 @@
-#!/home/software/apps/python/3.8.1/bin/python3
+#!/usr/bin/python3.6
 
 import sys
 import pandas as pd
@@ -19,7 +19,7 @@ def check_positive_days(value):
         raise ap.ArgumentTypeError("%s: Days cannot be a negative number" % value)
     return days
 
-parser = ap.ArgumentParser(prog='vuw-job-eff', description='Raapoi Job Efficiency tool. Reports on the minimum, maximum and mean average efficiency of your Raapoi jobs for CPU, memory, and time requested.', epilog='For more information see the Raapoi Cluster Documentation: https://vuw-research-computing.github.io/raapoi-docs/')
+parser = ap.ArgumentParser(prog='vuw-job-eff', description='Raapoi Job Efficiency tool. Reports on the minimum, maximum and mean average efficiency of your Raapoi jobs for CPU, memory, and time requested. This tool excludes PENDING and RUNNING jobs.', epilog='For more information see the Raapoi Cluster Documentation: https://vuw-research-computing.github.io/raapoi-docs/')
 parser.add_argument('-d', '--days', help='number of days for the report output; end date is today, default is 10 days', default=10, type=check_positive_days)
 parser.add_argument('-f', '--file', help='save summary efficiency output to a CSV file, automatically generated in the current working directory', action='store_true')
 parser.add_argument('-F', '--fullfile', help='save individual job efficiency output to a CSV file, automatically generated in the current working directory', action='store_true')
