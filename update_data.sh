@@ -7,3 +7,6 @@ cd /home/andre/metrics/raapoi_metrics
 
 # copy data
 cp *.csv /nfs/scratch/admin/metrics_data/
+
+# Push data to onedrive for sharing
+rclone copy --progress --transfers 8 /nfs/scratch/admin/metrics_data/all_jobs_new_calc.csv hdrive:/raapoi_metrics/
