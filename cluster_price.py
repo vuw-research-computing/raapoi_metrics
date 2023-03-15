@@ -9,7 +9,8 @@ from io import StringIO
 import time
 
 
-startdate = '2019-01-01'
+# startdate = '2019-01-01'
+startdate = '2022-10-01'  # temp date change
 use_currentdate = False # set to false to regenerate the entire dataset from the startdate. Use_currentdate assumes this has been running regulary via cron etc
 overlap_length = 30 # days of overlap - when using the current date and appending the dataset, use this as the overlap to account from long running jobs this should be longer than max runtime
 
@@ -119,8 +120,13 @@ def aws_cost_equiv(row):
         if cpu_request == 1 :
            mem_req_per_node = 2 * mem_req_per_node 
     
-    cpu_request = cpu_request / nodes  #we want per node cpu_request
+    try:
+        cpu_request = cpu_request / nodes  #we want per node cpu_request
+    except: #nodes =0 for some horrible reason, happend with jobid 2857218
+        nodes = 1  
+        cpu_request = cpu_request / nodes  #we want per node cpu_request
     memory_used = row.MaxRSS/gibimibi  #always M now
+    
     try:
         aws_instance = aws_cost[(aws_cost.vCPU>=cpu_request) & (aws_cost.Memory>=mem_req_per_node)].iloc[0]
         if not pd.isnull(aws_instance.burst):
