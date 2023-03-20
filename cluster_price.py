@@ -110,6 +110,8 @@ def aws_cost_equiv(row):
         cpu_request = int(row.AllocCPUS)
     
     nodes = int(row.NNodes)
+    if nodes <= 0:
+        nodes=1
     mem_req_per_node = int(''.join(re.findall(r'\d+', row.ReqMem))) / gibimibi  #in gibibytes
     
     if 'n' in row.ReqMem: #memory per node
