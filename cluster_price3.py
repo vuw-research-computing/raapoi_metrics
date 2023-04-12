@@ -158,7 +158,8 @@ def collate_saact(user_jobs_data, startdate, calcOld=False):
     df = pd.DataFrame(columns=column_names)
     rootid = 'xx'
     rowkeep = df[:1]
-    user_jobs_data.drop(user_jobs_data[user_jobs_data['Start'] == startdate + 'T00:00:00'].index, inplace=True)
+    # user_jobs_data.drop(user_jobs_data[user_jobs_data['Start'] == startdate + 'T00:00:00'].index, inplace=True)
+    user_jobs_data = user_jobs_data[user_jobs_data['Start'] != startdate + 'T00:00:00']
 
     # Preprocessing steps from user_usage function
     # use the loc accessor to modify the DataFrame in place
