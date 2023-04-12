@@ -169,7 +169,7 @@ def collate_saact(user_jobs_data, startdate, calcOld=False):
     user_jobs_data.loc[:, 'Timelimit'] = user_jobs_data['Timelimit'].map(lambda x: timeformat_lambda(x))
     user_jobs_data.loc[:, 'TotalCPU'] = user_jobs_data['TotalCPU'].map(lambda x: timeformat_lambda(x))
 
-user_jobs_data.loc[:, 'JobID'] = user_jobs_data['JobID'].map(lambda x: cleanjobid(x))
+    user_jobs_data.loc[:, 'JobID'] = user_jobs_data['JobID'].map(lambda x: cleanjobid(x))
 
 
     # Aggregating and processing as in the original collate_saact function
