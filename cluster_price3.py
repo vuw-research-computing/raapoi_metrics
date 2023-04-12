@@ -163,10 +163,10 @@ def collate_saact(user_jobs_data, startdate, calcOld=False):
 
     # Preprocessing steps from user_usage function
     # use the loc accessor to modify the DataFrame in place
-    # user_jobs_data.loc[:, 'MaxRSS'] = user_jobs_data['MaxRSS'].map(lambda x: memfix(x))
-    # user_jobs_data.loc[:, 'MaxVMSize'] = user_jobs_data['MaxVMSize'].map(lambda x: memfix(x))
-    user_jobs_data = user_jobs_data.assign(MaxRSS=user_jobs_data['MaxRSS'].map(lambda x: memfix(x)))
-    user_jobs_data = user_jobs_data.assign(MaxVMSize=user_jobs_data['MaxVMSize'].map(lambda x: memfix(x)))
+    user_jobs_data.loc[:, 'MaxRSS'] = user_jobs_data['MaxRSS'].map(lambda x: memfix(x))
+    user_jobs_data.loc[:, 'MaxVMSize'] = user_jobs_data['MaxVMSize'].map(lambda x: memfix(x))
+    # user_jobs_data = user_jobs_data.assign(MaxRSS=user_jobs_data['MaxRSS'].map(lambda x: memfix(x)))
+    # user_jobs_data = user_jobs_data.assign(MaxVMSize=user_jobs_data['MaxVMSize'].map(lambda x: memfix(x)))
 
 
     user_jobs_data.loc[:, 'Elapsed'] = user_jobs_data['Elapsed'].map(lambda x: timeformat_lambda(x))
