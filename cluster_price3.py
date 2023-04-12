@@ -161,14 +161,16 @@ def collate_saact(user_jobs_data, startdate, calcOld=False):
     user_jobs_data.drop(user_jobs_data[user_jobs_data['Start'] == startdate + 'T00:00:00'].index, inplace=True)
 
     # Preprocessing steps from user_usage function
-    user_jobs_data['MaxRSS'] = user_jobs_data['MaxRSS'].map(lambda x: memfix(x))
-    user_jobs_data['MaxVMSize'] = user_jobs_data['MaxVMSize'].map(lambda x: memfix(x))
+    # use the loc accessor to modify the DataFrame in place
+    user_jobs_data.loc[:, 'MaxRSS'] = user_jobs_data['MaxRSS'].map(lambda x: memfix(x))
+    user_jobs_data.loc[:, 'MaxVMSize'] = user_jobs_data['MaxVMSize'].map(lambda x: memfix(x))
 
-    user_jobs_data['Elapsed'] = user_jobs_data['Elapsed'].map(lambda x: timeformat_lambda(x))
-    user_jobs_data['Timelimit'] = user_jobs_data['Timelimit'].map(lambda x: timeformat_lambda(x))
-    user_jobs_data['TotalCPU'] = user_jobs_data['TotalCPU'].map(lambda x: timeformat_lambda(x))
+    user_jobs_data.loc[:, 'Elapsed'] = user_jobs_data['Elapsed'].map(lambda x: timeformat_lambda(x))
+    user_jobs_data.loc[:, 'Timelimit'] = user_jobs_data['Timelimit'].map(lambda x: timeformat_lambda(x))
+    user_jobs_data.loc[:, 'TotalCPU'] = user_jobs_data['TotalCPU'].map(lambda x: timeformat_lambda(x))
 
-    user_jobs_data['JobID'] = user_jobs_data['JobID'].map(lambda x: cleanjobid(x))
+user_jobs_data.loc[:, 'JobID'] = user_jobs_data['JobID'].map(lambda x: cleanjobid(x))
+
 
     # Aggregating and processing as in the original collate_saact function
     df_agg = user_jobs_data.groupby('JobID').agg({
