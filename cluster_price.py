@@ -10,7 +10,9 @@ import time
 
 
 # startdate = '2019-01-01'
-startdate = '2022-10-01'  # temp date change
+# startdate = '2022-10-01'  # temp date change
+startdate = '2023-04-01'
+
 use_currentdate = False # set to false to regenerate the entire dataset from the startdate. Use_currentdate assumes this has been running regulary via cron etc
 overlap_length = 30 # days of overlap - when using the current date and appending the dataset, use this as the overlap to account from long running jobs this should be longer than max runtime
 
