@@ -164,10 +164,7 @@ def collate_saact(user_jobs_data, startdate, calcOld=False):
     # Preprocessing steps from user_usage function
     # use the loc accessor to modify the DataFrame in place
     user_jobs_data.loc[:, 'MaxRSS'] = user_jobs_data['MaxRSS'].map(lambda x: memfix(x))
-    user_jobs_data.loc[:, 'MaxVMSize'] = user_jobs_data['MaxVMSize'].map(lambda x: memfix(x))
-    # user_jobs_data = user_jobs_data.assign(MaxRSS=user_jobs_data['MaxRSS'].map(lambda x: memfix(x)))
-    # user_jobs_data = user_jobs_data.assign(MaxVMSize=user_jobs_data['MaxVMSize'].map(lambda x: memfix(x)))
-
+    user_jobs_data.loc[:, 'MaxVMSize'] = user_jobs_data['MaxVMSize'].map(lambda x: memfix(x))\
 
     user_jobs_data.loc[:, 'Elapsed'] = user_jobs_data['Elapsed'].map(lambda x: timeformat_lambda(x))
     user_jobs_data.loc[:, 'Timelimit'] = user_jobs_data['Timelimit'].map(lambda x: timeformat_lambda(x))
@@ -418,6 +415,7 @@ end_date_str = datetime.now().strftime("%Y-%m-%d")
 job_data_str = subprocess.run(['sacct', '-S', start_date_str, '-E', end_date_str, '--parsable2', '--format=User,jobid,Elapsed,Timelimit,Start,NNodes,NCPUS,NTasks,MaxRSS,MaxVMSize,Partition,ReqCPUS,AllocCPUS,TotalCPU,CPUtime,ReqMem,AllocGRES,State,End,Account'], stdout=subprocess.PIPE).stdout.decode('utf-8')
 job_data_io = StringIO(job_data_str)
 all_jobs_data = pd.read_csv(job_data_io, sep='|')
+import pdb; pdb.set_trace()
 
 # Process usage data for each user
 for user in usernames:
