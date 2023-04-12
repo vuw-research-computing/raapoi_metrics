@@ -359,7 +359,7 @@ for user in usernames:
         print(user, end='')
         t0 = time.time()
 
-        all_jobs_f, newdf = collate_saact(user_jobs_data, startdate, calcOld=True)
+        all_jobs_f, newdf = collate_saact(user_jobs_data)
         all_jobs_df = pd.concat([all_jobs_df, all_jobs_f], sort=False)
         all_jobs_newdf = pd.concat([all_jobs_newdf, newdf], sort=False)
 
