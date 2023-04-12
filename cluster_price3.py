@@ -197,7 +197,58 @@ def collate_saact(user_jobs_data, startdate, calcOld=False):
     # Processing the old data as in the user_usage function, if calcOld is True
     if calcOld:
         # ... (same as original in user_usage function)
-        pass
+        df = df[df.MaxVMSize.notna()] #Drop NaN value MaxVMSize, which is extraneous output - effectivly removes the "root" jobid - which in the otehr method we keep instead and base off.
+        costs = []
+        cpu_request_list = []
+        mem_request_list = []
+        time_taken_hours = []
+        start_time_list =[]
+
+        #bad iterating over a df, TODO make better
+        for row in df.itertuples():
+            try:
+                cpu_request = int(row.NCPUS)
+            except:
+                1/0
+            memory_request = row.MaxVMSize/gibimibi
+            try:
+                aws_instance = aws_cost[(aws_cost.vCPU>=cpu_request) & (aws_cost.Memory>=memory_request)].iloc[0]
+            except:
+                # no possible instance, too much memory or too much ram, in this case, get multiples of the "closest" fitting instance.
+                max_cpu = max(aws_cost.vCPU)
+                max_memory = max(aws_cost.Memory)
+
+                multiples_of_cpu = cpu_request / max_cpu
+                multiples_of_memory = memory_request / max_memory
+
+                if multiples_of_cpu > 1:
+                    cpu_request = max_cpu
+                if multiples_of_memory > 1:
+                    memory_request = max_memory
+                aws_instance = aws_cost[(aws_cost.vCPU>=cpu_request) & (aws_cost.Memory>=memory_request)].iloc[0]
+
+                if multiples_of_memory > multiples_of_cpu:
+                    instance_multiplier = multiples_of_memory
+                else:
+                    instance_multiplier = multiples_of_cpu
+                
+                aws_instance.Name = aws_instance.Name + ' *' + str(instance_multiplier)
+                aws_instance.vCPU = aws_instance.vCPU * instance_multiplier
+                aws_instance.Memory = aws_instance.Memory * instance_multiplier
+                aws_instance.Per_Hour = aws_instance.Per_Hour * instance_multiplier
+
+
+            rt = row.Elapsed
+            rt_min = rt.total_seconds()/60
+            rt_hours = rt_min/60 
+            cost = rt_hours * aws_instance.Per_Hour
+
+            costs.append(cost)
+            cpu_request_list.append(cpu_request)
+            mem_request_list.append(memory_request)
+            time_taken_hours.append(rt_hours)
+
+            start_time_list.append(row.Start)
 
     return user_jobs_data, df_agg
   
