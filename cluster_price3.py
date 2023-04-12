@@ -435,4 +435,9 @@ for user in usernames:
 
     else:
         print(f'{user} not found in sacct output.')
+
+if use_currentdate == True:  #concat old and new df, removing duplicates
+    all_jobs_df = pd.concat([old_df,all_jobs_df],sort=False).drop_duplicates().reset_index(drop=True)
+all_jobs_df.to_csv('all_jobs.csv')
+all_jobs_newdf.to_csv('all_jobs_new_calc.csv')
         
