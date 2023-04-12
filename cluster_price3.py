@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 # Constants
-startdate = '2022-10-01'
+startdate = '2023-04-01'
 use_currentdate = False
 overlap_length = 30
 gibikibi = 1048576
@@ -119,7 +119,7 @@ def aws_cost_equiv(row):
                 
     except:
         if row.Elapsed.total_seconds() > 10:  
-            print('
+            print('### Warning jobid',row.JobID,' Does not fit an aws instance for costing, dubious measures ensue!### ',end='')
             print_cost = True
         
         max_cpu = max(aws_cost.vCPU)
