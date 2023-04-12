@@ -412,11 +412,10 @@ if use_currentdate:
 # Fetch all jobs within the specified date range
 start_date_str = startdate
 end_date_str = datetime.now().strftime("%Y-%m-%d")
-# job_data_str = subprocess.run(['sacct', '-S', start_date_str, '-E', end_date_str, '--parsable2', '--format=User,jobid,Elapsed,Timelimit,Start,NNodes,NCPUS,NTasks,MaxRSS,MaxVMSize,Partition,ReqCPUS,AllocCPUS,TotalCPU,CPUtime,ReqMem,AllocGRES,State,End,Account'], stdout=subprocess.PIPE).stdout.decode('utf-8')
 job_data_str = subprocess.run(['sacct', '-S', start_date_str, '-E', end_date_str, '--parsable2', '--allusers', '--format=User,jobid,Elapsed,Timelimit,Start,NNodes,NCPUS,NTasks,MaxRSS,MaxVMSize,Partition,ReqCPUS,AllocCPUS,TotalCPU,CPUtime,ReqMem,AllocGRES,State,End,Account'], stdout=subprocess.PIPE).stdout.decode('utf-8')
 job_data_io = StringIO(job_data_str)
 all_jobs_data = pd.read_csv(job_data_io, sep='|')
-import pdb; pdb.set_trace()
+# import pdb; pdb.set_trace()
 
 # Process usage data for each user
 for user in usernames:
