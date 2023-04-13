@@ -197,6 +197,8 @@ def collate_saact(user_jobs_data, startdate, calcOld=False):
     if not df_agg.empty:
         df_agg['aws_cost'] = df_agg.apply(aws_cost_equiv, axis=1)
 
+    import pdb; pdb.set_trace()
+
     # Processing the old data as in the user_usage function, if calcOld is True
     if calcOld:
         # ... (same as original in user_usage function)
