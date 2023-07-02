@@ -43,6 +43,7 @@ def split_csv(csv_file, nprocs, output_dir):
 
   end_time = time.time()
   print(f"Time to split CSV: {end_time - start_time}")
+  print(f"Total time: {end_time - start_time}")
 
   return split_files
 
