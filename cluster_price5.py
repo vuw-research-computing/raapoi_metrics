@@ -30,6 +30,7 @@ while current_start_date < end_date:
         end_time = time.time()
         elapsed_time = end_time - start_time
         print('Query took:', elapsed_time, 'seconds')
+        print(' ')
 
         rows = job_data_str.split('\n')  # Split the string into rows
 
