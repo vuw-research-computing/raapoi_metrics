@@ -2,55 +2,65 @@ import csv
 import os
 import time
 
-def split_csv(csv_file, nprocs, output_dir):
-  """Splits a CSV file into nprocs files based on the jobid column.
+# Define the path to your data and the number of processes
+data_path = "slurm_data/all_data.csv"
+nprocs = #Define your number of processes
 
-  Args:
-    csv_file: The path to the CSV file to split.
-    nprocs: The number of files to split the CSV file into.
-    output_dir: The directory to put the split CSV files in.
+# Define column names
+column_names = ['User', 'jobid', 'Elapsed', 'Timelimit', 'Start', 'NNodes', 'NCPUS', 'NTasks', 'MaxRSS',
+               'MaxVMSize', 'Partition', 'ReqCPUS', 'AllocCPUS', 'TotalCPU', 'CPUtime', 'ReqMem', 'AllocGRES',
+               'State', 'End', 'Account']
 
-  Returns:
-    A list of the paths to the split CSV files.
-  """
+# Get the total number of lines in the file
+start_time = time.time()
+with open(data_path) as f:
+    total_lines = sum(1 for line in f)
+end_time = time.time()
 
-  start_time = time.time()
+print(f"Time taken to open original file: {end_time - start_time} seconds")
 
-  with open(csv_file, "r") as csvfile:
-    reader = csv.reader(csvfile, delimiter="|")
-    jobids = {}
+# Calculate number of lines per file
+lines_per_file = total_lines // nprocs
+
+# Create output directory
+output_dir = "nprocs_split"
+os.makedirs(output_dir, exist_ok=True)
+
+# Open the input CSV file
+with open(data_path, 'r') as input_csv:
+    reader = csv.reader(input_csv, delimiter='|')
+
+    current_file_num = 0
+    current_line_num = 0
+    current_file = None
+    writer = None
+
+    # Loop through each row
     for row in reader:
-      jobid = row[1]
-      if "." in jobid:
-        jobid = jobid.split(".")[0]
-      if jobid not in jobids:
-        jobids[jobid] = []
-      jobids[jobid].append(row)
+        jobid = row[column_names.index('jobid')]
 
-    print(f"Time to create jobid dictionary: {time.time() - start_time}")
+        # If we've written enough lines to this file or if the current jobid contains "."
+        if current_line_num >= lines_per_file or "." in jobid:
+            print(f"Adjusting split index to avoid splitting job {jobid}")
 
-    # Create the split CSV files.
-    split_files = []
-    for i in range(nprocs):
-      split_file = os.path.join(output_dir, f"split_{i}.csv")
-      with open(split_file, "w") as csvfile:
-        writer = csv.writer(csvfile, delimiter="|")
-        for row in jobids.values():
-          current_jobid = row[1].split(".")[0]
-          if i == 0 or current_jobid != jobids[i - 1][1].split(".")[0]:
-            writer.writerows(row)
-      split_files.append(split_file)
+            # Close the current file if it's open
+            if current_file is not None:
+                current_file.close()
 
-  end_time = time.time()
-  print(f"Time to split CSV: {end_time - start_time}")
-  print(f"Total time: {end_time - start_time}")
+            # Open a new file
+            current_file_num += 1
+            current_file = open(f'{output_dir}/split_{current_file_num}.csv', 'w')
+            writer = csv.writer(current_file, delimiter='|')
+            print(f"Writing to file: {output_dir}/split_{current_file_num}.csv")
 
-  return split_files
+            current_line_num = 0
 
+        # Write the row to the current file
+        writer.writerow(row)
+        current_line_num += 1
 
-if __name__ == "__main__":
-  csv_file = "slurm_data/all_data.csv"
-  nprocs = 4
-  output_dir = "nprocs_split"
-  split_files = split_csv(csv_file, nprocs, output_dir)
-  print(split_files)
+    # Close the last file if it's open
+    if current_file is not None:
+        current_file.close()
+
+print("All files have been written successfully.")
