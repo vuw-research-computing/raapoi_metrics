@@ -27,6 +27,8 @@ def split_csv(csv_file, nprocs, output_dir):
         jobids[jobid] = []
       jobids[jobid].append(row)
 
+    print(f"Time to create jobid dictionary: {time.time() - start_time}")
+
     # Create the split CSV files.
     split_files = []
     for i in range(nprocs):
@@ -47,7 +49,7 @@ def split_csv(csv_file, nprocs, output_dir):
 
 if __name__ == "__main__":
   csv_file = "slurm_data/all_data.csv"
-  nprocs = 100
+  nprocs = 4
   output_dir = "nprocs_split"
   split_files = split_csv(csv_file, nprocs, output_dir)
   print(split_files)
