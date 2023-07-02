@@ -1,6 +1,8 @@
 import pandas as pd
+import time
 from io import StringIO
 from cluster_price_func import collate_saact
+
 
 # Initialize dataframes for storing job information
 all_jobs_df = pd.DataFrame()
