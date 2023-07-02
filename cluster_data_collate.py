@@ -10,7 +10,16 @@ all_jobs_newdf = pd.DataFrame()
 
 start_time = time.time()
 print("Collecting initial dataframe")
-all_jobs_data = pd.read_csv("slurm_data/all_data.csv", sep='|')
+dtype = {8: str, 16: str}  # Columns with mixed types to be set as string
+all_jobs_data = pd.read_csv("slurm_data/all_data.csv", sep='|', dtype=dtype)
+
+# Assign column names to the DataFrame
+column_names = ['User', 'jobid', 'Elapsed', 'Timelimit', 'Start', 'NNodes', 'NCPUS', 'NTasks', 'MaxRSS',
+                   'MaxVMSize', 'Partition', 'ReqCPUS', 'AllocCPUS', 'TotalCPU', 'CPUtime', 'ReqMem', 'AllocGRES',
+                   'State', 'End', 'Account']
+all_jobs_data.columns = column_names
+
+
 end_time = time.time()
 elapsed_time = end_time - start_time
 
