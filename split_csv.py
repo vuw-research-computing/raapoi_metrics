@@ -1,5 +1,6 @@
 import csv
 import os
+import time
 
 def split_csv(csv_file, nprocs, output_dir):
   """Splits a CSV file into nprocs files based on the jobid column.
@@ -12,6 +13,8 @@ def split_csv(csv_file, nprocs, output_dir):
   Returns:
     A list of the paths to the split CSV files.
   """
+
+  start_time = time.time()
 
   with open(csv_file, "r") as csvfile:
     reader = csv.reader(csvfile, delimiter="|")
@@ -34,7 +37,10 @@ def split_csv(csv_file, nprocs, output_dir):
           writer.writerows(row)
       split_files.append(split_file)
 
-    return split_files
+  end_time = time.time()
+  print(f"Time to split CSV: {end_time - start_time}")
+
+  return split_files
 
 
 if __name__ == "__main__":
