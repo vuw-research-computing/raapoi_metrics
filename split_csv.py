@@ -44,7 +44,7 @@ with open(data_path, 'r') as input_csv:
 
         # If we've written enough lines to this file and this jobid is different from the last, 
         # or if it's the first line of the file
-        if (current_line_num >= lines_per_file and jobid != prev_jobid) or current_file is None:
+        if current_line_num >= lines_per_file and "." not in jobid and jobid != prev_jobid or current_file is None:
 
             # Close the current file if it's open
             if current_file is not None:
