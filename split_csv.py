@@ -34,7 +34,9 @@ def split_csv(csv_file, nprocs, output_dir):
       with open(split_file, "w") as csvfile:
         writer = csv.writer(csvfile, delimiter="|")
         for row in jobids.values():
-          writer.writerows(row)
+          current_jobid = row[1].split(".")[0]
+          if i == 0 or current_jobid != jobids[i - 1][1].split(".")[0]:
+            writer.writerows(row)
       split_files.append(split_file)
 
   end_time = time.time()
@@ -45,7 +47,7 @@ def split_csv(csv_file, nprocs, output_dir):
 
 if __name__ == "__main__":
   csv_file = "slurm_data/all_data.csv"
-  nprocs = 4
+  nprocs = 100
   output_dir = "nprocs_split"
   split_files = split_csv(csv_file, nprocs, output_dir)
   print(split_files)
