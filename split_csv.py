@@ -4,7 +4,7 @@ import time
 
 # Define the path to your data and the number of processes
 data_path = "slurm_data/all_data.csv"
-nprocs = #Define your number of processes
+nprocs = 100 #Define your number of processes
 
 # Define column names
 column_names = ['User', 'jobid', 'Elapsed', 'Timelimit', 'Start', 'NNodes', 'NCPUS', 'NTasks', 'MaxRSS',
@@ -40,7 +40,7 @@ with open(data_path, 'r') as input_csv:
         jobid = row[column_names.index('jobid')]
 
         # If we've written enough lines to this file or if the current jobid contains "."
-        if current_line_num >= lines_per_file or "." in jobid:
+        if current_file is None or current_line_num >= lines_per_file or "." in jobid:
             print(f"Adjusting split index to avoid splitting job {jobid}")
 
             # Close the current file if it's open
