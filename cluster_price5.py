@@ -50,3 +50,32 @@ while current_start_date < end_date:
     # Update the start and end dates for the next iteration
     current_start_date = current_end_date
     current_end_date += relativedelta(months=1)
+
+
+#merge files
+############################################
+
+output_file = "slurm_data/all_data.csv"  # Output file path
+directory = "slurm_data"  # Directory containing the monthly CSV files
+
+# Get a list of all CSV files in the directory, sorted by name (date)
+csv_files = sorted([file for file in os.listdir(directory) if file.endswith(".csv")])
+
+start_time = time.time()
+
+with open(output_file, "w") as outfile:
+    for index, csv_file in enumerate(csv_files):
+        if csv_file == "all_data.csv":
+            continue  # Skip the output file itself
+
+        file_path = os.path.join(directory, csv_file)
+        with open(file_path, "r") as infile:
+            outfile.write(infile.read())
+
+        # Print the order of the file being processed
+        print(f"Processing file {index+1}/{len(csv_files)-1}: {csv_file}")
+
+end_time = time.time()
+elapsed_time = end_time - start_time
+
+print(f"\nJoining the files took: {elapsed_time:.2f} seconds.")
