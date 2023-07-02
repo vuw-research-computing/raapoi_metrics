@@ -4,7 +4,7 @@ import time
 
 # Define the path to your data and the number of processes
 data_path = "slurm_data/all_data.csv"
-nprocs = #Define your number of processes
+nprocs = 100 #Define your number of processes
 
 # Define column names
 column_names = ['User', 'jobid', 'Elapsed', 'Timelimit', 'Start', 'NNodes', 'NCPUS', 'NTasks', 'MaxRSS',
