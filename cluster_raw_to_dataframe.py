@@ -1,8 +1,10 @@
 import pandas as pd
 import os
 from multiprocessing import Pool, cpu_count
-from cluster_price_func import collate_saact
+from functions.cluster_price import collate_saact
 import time
+
+from functions.aws_cost import aws_cost_equiv
 
 def process_file(filename):
     df1 = pd.read_csv(f'nprocs_split/{filename}', header=None, delimiter="|", dtype={8: str, 16: str})
