@@ -5,8 +5,9 @@ from functions.cluster_price import collate_saact
 import time
 
 from functions.aws_cost import aws_cost_equiv
+from functions.aws_cost import prepare_aws_cost_data
 
-def process_file(filename):
+def process_file(filename, aws_cost_data):
     df1 = pd.read_csv(f'nprocs_split/{filename}', header=None, delimiter="|", dtype={8: str, 16: str})
 
     column_names = ['User', 'JobID', 'Elapsed', 'Timelimit', 'Start', 'NNodes', 'NCPUS', 'NTasks', 'MaxRSS',
@@ -24,6 +25,9 @@ def main():
 
     # Get the number of CPUs available from SLURM
     n_cpus = int(os.getenv('SLURM_CPUS_PER_TASK', default=os.cpu_count()))
+    
+    # Prepare aws cost sheet
+    aws_cost_data = prepare_aws_cost_data()
 
     # Create a multiprocessing Pool
     pool = Pool(processes=n_cpus)
