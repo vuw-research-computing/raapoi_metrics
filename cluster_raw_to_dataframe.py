@@ -29,12 +29,11 @@ def multiCollate(linear=False):
     # Prepare aws cost sheet
     aws_cost_data = prepare_aws_cost_data()
 
-    # Create a multiprocessing Pool
-    pool = Pool(processes=n_cpus)
-
     start_time = time.time()
     results = []   # Initialize results list
     if linear==False:
+        # Create a multiprocessing Pool
+        pool = Pool(processes=n_cpus)
         # Use the pool to process the files in parallel
         results = pool.starmap(process_file, [(f, aws_cost_data) for f in files])
     else:
