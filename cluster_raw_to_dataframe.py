@@ -15,7 +15,7 @@ def process_file(filename, aws_cost_data):
                 'State', 'End', 'Account']
     df1.columns = column_names
     
-    dfout_test, dfout = collate_saact(df1)
+    dfout_test, dfout = collate_saact(df1, aws_cost_data)
 
     return dfout_test, dfout
 
