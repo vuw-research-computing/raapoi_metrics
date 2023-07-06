@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
-from aws_cost import aws_cost_equiv
-from aws_cost import prepare_aws_cost_data
+from .aws_cost import aws_cost_equiv
+from .aws_cost import prepare_aws_cost_data
 
 def memfix(inmem):
     if pd.isnull(inmem):
@@ -73,6 +73,6 @@ def collate_saact(jobs_data, aws_cost_data):
         'End': lambda x: x.iloc[0]
     })
     if not df_agg.empty:
-        aws_cost_data = prepare_aws_cost_data()
+        # aws_cost_data = prepare_aws_cost_data()
         df_agg['aws_cost'] = df_agg.apply(lambda row: aws_cost_equiv(row, aws_cost_data), axis=1)
     return jobs_data, df_agg
