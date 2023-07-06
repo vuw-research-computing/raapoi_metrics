@@ -19,7 +19,7 @@ def process_file(filename, aws_cost_data):
 
     return dfout_test, dfout
 
-def main():
+def multiCollate(linear=False):
     # Get a list of all the csv files
     files = [f for f in os.listdir('nprocs_split') if f.endswith('.csv')]
 
@@ -33,9 +33,14 @@ def main():
     pool = Pool(processes=n_cpus)
 
     start_time = time.time()
-
-    # Use the pool to process the files in parallel
-    results = pool.map(process_file, files)
+    results = []   # Initialize results list
+    if linear==False:
+        # Use the pool to process the files in parallel
+        results = pool.starmap(process_file, [(f, aws_cost_data) for f in files])
+    else:
+        for f in files:
+            result = process_file(f, aws_cost_data)
+            results.append(result)  # Append results from each file to the results list
 
     end_time = time.time()
     elapsed_time = end_time - start_time
@@ -49,5 +54,6 @@ def main():
     #dfout_test_all.to_csv('dfout_test_all.csv', index=False)
     dfout_all.to_csv('dfout_all.csv', index=False)
 
+
 if __name__ == '__main__':
-    main()
+    multiCollate()
