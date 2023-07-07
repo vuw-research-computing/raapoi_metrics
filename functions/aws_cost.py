@@ -16,7 +16,7 @@ gibimibi = 1024
 A100_cost = 32.77/8  # cost of A100 based on 2023 A100 cost of p4d.24xlarge on aws
 nesi_cost_per_hour = 0.06 # 0.05 NZD on broadwell - their milan cost is 0.08, hence 0.06
 A100_cost_nesi = 0.90 #NZD
-usd_to_nzd = 1.62 # july 2023
+usd_to_nzd = 1.62 # july 2023 - not used internally at all, apply during analysis
 
 
 
@@ -34,7 +34,7 @@ def prepare_aws_cost_data():
     current_dir = os.path.dirname(os.path.realpath(__file__))
 
     # construct the file path to the csv file
-    # csv_file_path = os.path.join(current_dir, '../reference_data/Amazon EC2 Instance ComparisonJune2020.csv')
+    csv_file_path = os.path.join(current_dir, '../reference_data/Amazon EC2 Instance ComparisonJune2020.csv')
     # csv_file_path = os.path.join(current_dir, '../reference_data/Amazon EC2 Instance ComparisonSydneyJuly2023USD.csv')
     # aws_cost = pd.read_csv(csv_file_path)
     # aws_cost = aws_cost.sort_values(by=['Per_Hour'])
