@@ -30,7 +30,8 @@ def prepare_aws_cost_data():
     current_dir = os.path.dirname(os.path.realpath(__file__))
 
     # construct the file path to the csv file
-    csv_file_path = os.path.join(current_dir, '../reference_data/Amazon EC2 Instance ComparisonJune2020.csv')
+    # csv_file_path = os.path.join(current_dir, '../reference_data/Amazon EC2 Instance ComparisonJune2020.csv')
+    csv_file_path = os.path.join(current_dir, '../reference_data/Amazon EC2 Instance ComparisonSydneyJuly2023USD.csv')
     # aws_cost = pd.read_csv(csv_file_path)
     # aws_cost = aws_cost.sort_values(by=['Per_Hour'])
     aws_cost = pd.read_csv(csv_file_path)
