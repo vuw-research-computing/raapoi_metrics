@@ -13,6 +13,10 @@ gibikibi = 1048576
 mibikibi = 1024
 gibimibi = 1024
 
+A100_cost = 32.77/8  # cost of A100 based on 2023 A100 cost of p4d.24xlarge on aws
+
+
+
 def burstfinder(invcpu):
     vcpu_params = re.split('vCPUs|for a|burst', invcpu)
     if len(vcpu_params) == 4:
@@ -148,8 +152,21 @@ def aws_cost_equiv(row,aws_cost):
     if rt_min < 1:
         rt_min=1.00  
     rt_hours = rt_min/60 
+
+    #gpu instance check - currently assumes all GPUS are A100's!
+    if 'gpu' in row['AllocGRES']:
+        gpu_num = int(row['AllocGRES'].split(':')[1])
+
+        cost = rt_hours * A100_cost * gpu_num 
+    else:
+        gpu_num = None
+        cost = rt_hours * aws_instance.Per_Hour
+
+
     cost = rt_hours * aws_instance.Per_Hour
     cost = cost * nodes
+
+
     if print_cost == True:
         print('AWS_est_cost =  ',cost,'  ',end='')
     
