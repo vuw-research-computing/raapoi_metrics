@@ -14,6 +14,10 @@ mibikibi = 1024
 gibimibi = 1024
 
 A100_cost = 32.77/8  # cost of A100 based on 2023 A100 cost of p4d.24xlarge on aws
+nesi_cost_per_hour = 0.06 # 0.05 NZD on broadwell - their milan cost is 0.08, hence 0.06
+A100_cost_nesi = 0.90 #NZD
+usd_to_nzd = 1.62 # july 2023
+
 
 
 
@@ -31,7 +35,7 @@ def prepare_aws_cost_data():
 
     # construct the file path to the csv file
     # csv_file_path = os.path.join(current_dir, '../reference_data/Amazon EC2 Instance ComparisonJune2020.csv')
-    csv_file_path = os.path.join(current_dir, '../reference_data/Amazon EC2 Instance ComparisonSydneyJuly2023USD.csv')
+    # csv_file_path = os.path.join(current_dir, '../reference_data/Amazon EC2 Instance ComparisonSydneyJuly2023USD.csv')
     # aws_cost = pd.read_csv(csv_file_path)
     # aws_cost = aws_cost.sort_values(by=['Per_Hour'])
     aws_cost = pd.read_csv(csv_file_path)
@@ -152,23 +156,20 @@ def aws_cost_equiv(row,aws_cost):
     rt_min = rt.total_seconds()/60
     if rt_min < 1:
         rt_min=1.00  
-    rt_hours = rt_min/60 
+    runtime_in_hours = rt_min/60 
 
-    #gpu instance check - currently assumes all GPUS are A100's!
-    if 'gpu' in row['AllocGRES']:
+    #gpu instance check - currently assumes all GPUS are A100's! also caculates nesi cost assuming all gpus are A100's
+    if isinstance(row['AllocGRES'], str) and 'gpu' in row['AllocGRES']:
         gpu_num = int(row['AllocGRES'].split(':')[1])
 
-        cost = rt_hours * A100_cost * gpu_num 
+        aws_cost = gpu_num * runtime_in_hours * A100_cost
+        nesi_cost = gpu_num * runtime_in_hours * A100_cost_nesi
     else:
-        gpu_num = None
-        cost = rt_hours * aws_instance.Per_Hour
-
-
-    cost = rt_hours * aws_instance.Per_Hour
-    cost = cost * nodes
-
+        nesi_cost = row['AllocCPUS'] * runtime_in_hours * nesi_cost_per_hour
+        aws_cost = runtime_in_hours * aws_instance.Per_Hour
+        aws_cost = aws_cost * nodes  # we don't need to multiply by nodes for nesi as we're just using all the allocated cores - we're not finding the awkward best matching instance
 
     if print_cost == True:
-        print('AWS_est_cost =  ',cost,'  ',end='')
+        print('AWS_est_cost =  ',aws_cost,'  ',end='')
     
-    return cost
+    return pd.Series([aws_cost, nesi_cost])

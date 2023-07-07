@@ -74,5 +74,5 @@ def collate_saact(jobs_data, aws_cost_data):
     })
     if not df_agg.empty:
         # aws_cost_data = prepare_aws_cost_data()
-        df_agg['aws_cost'] = df_agg.apply(lambda row: aws_cost_equiv(row, aws_cost_data), axis=1)
+        df_agg[['aws_cost', 'nesi_cost']] = df_agg.apply(lambda row: aws_cost_equiv(row, aws_cost_data), axis=1)
     return jobs_data, df_agg
