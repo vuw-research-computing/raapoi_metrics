@@ -114,7 +114,7 @@ def plot_unique_users_per_year(df):
     unique_users_per_year = unique_users_per_year.groupby(['Account', 'Year']).size().reset_index().rename(columns={0:'UniqueUsers'})
     accounts = unique_users_per_year['Account'].unique()
 
-        for account in accounts:
+    for account in accounts:
         account_data = unique_users_per_year[unique_users_per_year['Account'] == account]
         generate_plot(account_data, 'Year', 'Rāpoi', f'Unique {account} Users Per Year', f'plots/yearly_users/{account}_users_per_year.png')
     
