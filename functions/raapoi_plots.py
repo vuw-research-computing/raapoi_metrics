@@ -163,6 +163,8 @@ def plot_costs_per_year(df):
     # Convert 'Year' to integer, then to string, and convert to datetime
     cost_per_year['Year'] = pd.to_datetime(cost_per_year['Year'].astype(int).astype(str))
 
+    accounts = cost_per_year['Account'].unique()
+
     # Capitalize 'Account'
     cost_per_year['Account'] = cost_per_year['Account'].str.upper()
 
@@ -187,6 +189,8 @@ def plot_costs_per_month(df):
 
     # Convert 'Year' and 'Month' to integer, then to string, combine them, and convert to datetime
     cost_per_month['YearMonth'] = pd.to_datetime(cost_per_month['Year'].astype(int).astype(str) + '-' + cost_per_month['Month'].astype(int).astype(str))
+
+    accounts = cost_per_month['Account'].unique()
 
     # Capitalize 'Account'
     cost_per_month['Account'] = cost_per_month['Account'].str.upper()
