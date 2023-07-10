@@ -55,9 +55,9 @@ def preprocess_data(df):
 
     return df
 
-def generate_plot(df: pd.DataFrame, title: str, subtitle: str, filename: str, width: Optional[int] = 20) -> None:
+def generate_plot(df: pd.DataFrame, x_column: str, title: str, subtitle: str, filename: str, width: Optional[int] = 20) -> None:
     plot = (
-        ggplot(df, aes(x='YearMonth', y='UniqueUsers', fill='UniqueUsers'))
+        ggplot(df, aes(x=x_column, y='UniqueUsers', fill='UniqueUsers'))
         + geom_bar(stat='identity', width=width)
         + scale_fill_gradient(low="blue", high="red")
         + labs(x='Date', y='Unique Users', title=title, subtitle=subtitle, fill='UniqueUsers')
@@ -94,7 +94,7 @@ def plot_unique_users_per_month(df):
 
     for account in accounts:
         account_data = unique_users_per_month[unique_users_per_month['Account'] == account]
-        generate_plot(account_data, 'Rāpoi', f'Unique {account} Users Per Month', f'plots/monthly_users/{account}_users_per_month.png')
+        generate_plot(account_data, 'YearMonth', 'Rāpoi', f'Unique {account} Users Per Month', f'plots/monthly_users/{account}_users_per_month.png')
         
     # Produce the total unique users per month
     start_time = time.time()
@@ -105,19 +105,18 @@ def plot_unique_users_per_month(df):
     elapsed_time = end_time - start_time
     print('Creating total unique users took:', elapsed_time, 'seconds')
 
-    generate_plot(total_users_per_month, 'Rāpoi', 'Total Unique Users Per Month', 'plots/monthly_users/total_users_per_month.png')
+    generate_plot(total_users_per_month, 'YearMonth', 'Rāpoi', 'Total Unique Users Per Month', 'plots/monthly_users/total_users_per_month.png')
 
 def plot_unique_users_per_year(df):
     unique_users_per_year = df.groupby(['Account', 'Year', 'User']).size().reset_index().rename(columns={0:'count'})
 
     # Now group by 'Account' and 'Year' and count unique 'User'
     unique_users_per_year = unique_users_per_year.groupby(['Account', 'Year']).size().reset_index().rename(columns={0:'UniqueUsers'})
-    unique_users_per_year['YearMonth'] = pd.to_datetime(unique_users_per_year['Year'].astype(int).astype(str) + '-' + unique_users_per_year['Month'].astype(int).astype(str))
     accounts = unique_users_per_year['Account'].unique()
 
-    for account in accounts:
+        for account in accounts:
         account_data = unique_users_per_year[unique_users_per_year['Account'] == account]
-        generate_plot(account_data, 'Rāpoi', f'Unique {account} Users Per Year', f'plots/yearly_users/{account}_users_per_year.png')
+        generate_plot(account_data, 'Year', 'Rāpoi', f'Unique {account} Users Per Year', f'plots/yearly_users/{account}_users_per_year.png')
     
 
     # Produce the total unique users per year
@@ -129,5 +128,4 @@ def plot_unique_users_per_year(df):
     print('Creating total unique users took:', elapsed_time, 'seconds')
 
     # For total users
-    generate_plot(total_users_per_year, 'Rāpoi', 'Total Unique Users Per Year', 'plots/yearly_users/total_users_per_year.png')
-
+    generate_plot(total_users_per_year, 'Year', 'Rāpoi', 'Total Unique Users Per Year', 'plots/yearly_users/total_users_per_year.png')
