@@ -86,8 +86,6 @@ def plot_unique_users_per_month(df):
 
     accounts = unique_users_per_month['Account'].unique()
 
-    
-
     # Create the directory if it doesn't already exist
     if not os.path.exists('plots/monthly_users'):
         os.makedirs('plots/monthly_users')
@@ -113,6 +111,10 @@ def plot_unique_users_per_year(df):
     # Now group by 'Account' and 'Year' and count unique 'User'
     unique_users_per_year = unique_users_per_year.groupby(['Account', 'Year']).size().reset_index().rename(columns={0:'UniqueUsers'})
     accounts = unique_users_per_year['Account'].unique()
+
+    # Create the directory if it doesn't already exist
+    if not os.path.exists('plots/yearly_users'):
+        os.makedirs('plots/yearly_users/')
 
     for account in accounts:
         account_data = unique_users_per_year[unique_users_per_year['Account'] == account]
