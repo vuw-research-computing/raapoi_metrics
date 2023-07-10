@@ -171,14 +171,14 @@ def plot_costs_per_year(df):
     os.makedirs('plots/yearly_costs/nesi/', exist_ok=True)
 
     for account in accounts:
-    account_data = cost_per_year[cost_per_year['Account'] == account]
+        account_data = cost_per_year[cost_per_year['Account'] == account]
 
-    for cost_type in ['aws_cost', 'nesi_cost']:
-        cost_title = 'AWS cost' if cost_type == 'aws_cost' else 'NeSi cost'
-        cost_subtitle = 'Based on 2020 best matched instance for given core count' if cost_type == 'aws_cost' else ' '
-        save_folder = 'plots/yearly_costs/aws/' if cost_type == 'aws_cost' else 'plots/yearly_costs/nesi/'
+        for cost_type in ['aws_cost', 'nesi_cost']:
+            cost_title = 'AWS cost' if cost_type == 'aws_cost' else 'NeSi cost'
+            cost_subtitle = 'Based on 2020 best matched instance for given core count' if cost_type == 'aws_cost' else ' '
+            save_folder = 'plots/yearly_costs/aws/' if cost_type == 'aws_cost' else 'plots/yearly_costs/nesi/'
 
-        generate_cost_plot(account_data, 'Year', cost_type, 'Cost', f'{cost_title} for {account} Per Year', cost_subtitle, f"{save_folder}{account}_{cost_type}.png")
+            generate_cost_plot(account_data, 'Year', cost_type, 'Cost', f'{cost_title} for {account} Per Year', cost_subtitle, f"{save_folder}{account}_{cost_type}.png")
 
 
 def plot_costs_per_month(df):
@@ -196,12 +196,12 @@ def plot_costs_per_month(df):
     os.makedirs('plots/monthly_costs/nesi/', exist_ok=True)
 
     for account in accounts:
-    account_data = cost_per_month[cost_per_month['Account'] == account]
+        account_data = cost_per_month[cost_per_month['Account'] == account]
 
-    for cost_type in ['aws_cost', 'nesi_cost']:
-        cost_title = 'AWS cost' if cost_type == 'aws_cost' else 'NeSi cost'
-        cost_subtitle = 'Based on 2020 best matched instance for given core count' if cost_type == 'aws_cost' else ' '
-        save_folder = 'plots/monthly_costs/aws/' if cost_type == 'aws_cost' else 'plots/monthly_costs/nesi/'
+        for cost_type in ['aws_cost', 'nesi_cost']:
+            cost_title = 'AWS cost' if cost_type == 'aws_cost' else 'NeSi cost'
+            cost_subtitle = 'Based on 2020 best matched instance for given core count' if cost_type == 'aws_cost' else ' '
+            save_folder = 'plots/monthly_costs/aws/' if cost_type == 'aws_cost' else 'plots/monthly_costs/nesi/'
 
-        generate_cost_plot(account_data, 'Month', cost_type, 'Cost', f'{cost_title} for {account} Per Month', cost_subtitle, f"{save_folder}{account}_{cost_type}.png")
+            generate_cost_plot(account_data, 'Month', cost_type, 'Cost', f'{cost_title} for {account} Per Month', cost_subtitle, f"{save_folder}{account}_{cost_type}.png")
 
