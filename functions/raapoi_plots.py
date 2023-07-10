@@ -100,6 +100,7 @@ def plot_unique_users_per_month(df):
     start_time = time.time()
     # For the total unique users per month, group the original DataFrame by Year and Month and sum the unique users
     total_users_per_month = unique_users_per_month.groupby(['YearMonth'])['UniqueUsers'].sum().reset_index()
+    
     end_time = time.time()
     elapsed_time = end_time - start_time
     print('Creating total unique users took:', elapsed_time, 'seconds')
@@ -111,7 +112,7 @@ def plot_unique_users_per_year(df):
 
     # Now group by 'Account' and 'Year' and count unique 'User'
     unique_users_per_year = unique_users_per_year.groupby(['Account', 'Year']).size().reset_index().rename(columns={0:'UniqueUsers'})
-
+    unique_users_per_year['YearMonth'] = pd.to_datetime(unique_users_per_year['Year'].astype(int).astype(str) + '-' + unique_users_per_year['Month'].astype(int).astype(str))
     accounts = unique_users_per_year['Account'].unique()
 
     for account in accounts:
