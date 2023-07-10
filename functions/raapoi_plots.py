@@ -75,22 +75,6 @@ def generate_plot(df: pd.DataFrame, x_column: str, title: str, subtitle: str, fi
     # Save the plot
     ggsave(plot, filename=filename, format='png', dpi=300)
 
-def generate_cost_plot(df: pd.DataFrame, x_column: str, cost_type: str, y_label: str, title: str, subtitle: str, filename: str, date_breaks='1 year') -> None:
-    plot = (
-        ggplot(df, aes(x=x_column, y=cost_type, fill=cost_type))
-        + geom_col()  # using geom_col instead of geom_bar with stat='identity'
-        + scale_fill_gradient(low = "blue", high = "red")
-        + labs(x='Year', y=y_label, title=title, subtitle=subtitle, fill=cost_type)
-        + theme(axis_text_x = element_text(angle = 45, hjust = 1),  # rotate x-axis labels 45 degrees
-                plot_title=element_text(hjust=0.5),  # center title
-                plot_subtitle=element_text(hjust=0.5))  # center subtitle
-        + guides(fill=False)  # remove color bar
-        + scale_x_date(date_breaks=date_breaks, labels=date_format('%Y'))  # set x-axis breaks and labels
-    )
-
-    # Save the plot
-    plot.save(filename)
-
 
 def plot_unique_users_per_month(df):
     
@@ -172,15 +156,30 @@ def plot_costs_per_year(df):
     os.makedirs('plots/yearly_costs/aws/', exist_ok=True)
     os.makedirs('plots/yearly_costs/nesi/', exist_ok=True)
 
-    for account in accounts:
-        account_data = cost_per_year[cost_per_year['Account'] == account]
+for account in accounts:
+    account_data = cost_per_year[cost_per_year['Account'] == account]
 
-        for cost_type in ['aws_cost', 'nesi_cost']:
-            cost_title = 'AWS cost' if cost_type == 'aws_cost' else 'NeSi cost'
-            cost_subtitle = 'Based on 2020 best matched instance for given core count' if cost_type == 'aws_cost' else ' '
-            save_folder = 'plots/yearly_costs/aws/' if cost_type == 'aws_cost' else 'plots/yearly_costs/nesi/'
+    for cost_type in ['aws_cost', 'nesi_cost']:
+        cost_title = 'AWS cost' if cost_type == 'aws_cost' else 'NeSi cost'
+        cost_subtitle = 'Based on 2020 best matched instance for given core count' if cost_type == 'aws_cost' else ' '
+        save_folder = 'plots/yearly_costs/aws/' if cost_type == 'aws_cost' else 'plots/yearly_costs/nesi/'
 
-            generate_cost_plot(account_data, 'Year', cost_type, 'Cost', f'{cost_title} for {account} Per Year', cost_subtitle, f"{save_folder}{account}_{cost_type}.png")
+        plot = (
+            ggplot(account_data, aes(x='Year', y=cost_type, fill=cost_type))
+            + geom_col()  # using geom_col instead of geom_bar with stat='identity'
+            + scale_fill_gradient(low = "blue", high = "red")
+            + labs(x='Year', y='Cost', title=f'{cost_title} for {account} Per Year', subtitle=cost_subtitle, fill=cost_type)
+            + theme(axis_text_x = element_text(angle = 45, hjust = 1),  # rotate x-axis labels 45 degrees
+                    plot_title=element_text(hjust=0.5),  # center title
+                    plot_subtitle=element_text(hjust=0.5))  # center subtitle
+            + guides(fill=False)  # remove color bar
+            + scale_x_date(date_breaks='1 year', labels=date_format('%Y'))  # set x-axis breaks and labels
+        )
+        
+        print(plot)
+
+        # Save the plot
+        plot.save(f"{save_folder}{account}_{cost_type}.png")
 
 
 def plot_costs_per_month(df):
@@ -207,5 +206,18 @@ def plot_costs_per_month(df):
             cost_subtitle = 'Based on 2020 best matched instance for given core count' if cost_type == 'aws_cost' else ' '
             save_folder = 'plots/monthly_costs/aws/' if cost_type == 'aws_cost' else 'plots/monthly_costs/nesi/'
 
-            generate_cost_plot(account_data, 'Month', cost_type, 'Cost', f'{cost_title} for {account} Per Month', cost_subtitle, f"{save_folder}{account}_{cost_type}.png")
+            plot = (
+                ggplot(account_data, aes(x='YearMonth', y=cost_type, fill=cost_type))
+                + geom_bar(stat='identity', width=20)  # adjust the width as needed
+                + scale_fill_gradient(low = "blue", high = "red")
+                + labs(x='Date', y='Cost', title=f'{cost_title} for {account} Per Month', subtitle=cost_subtitle, fill=cost_type)
+                + theme(axis_text_x = element_text(angle = 45, hjust = 1),  # rotate x-axis labels 45 degrees
+                        plot_title=element_text(hjust=0.5),  # center title
+                        plot_subtitle=element_text(hjust=0.5))  # center subtitle
+                + guides(fill=False)  # remove color bar
+            )
+            
+            print(plot)
 
+            # Save the plot
+        plot.save(f"{save_folder}{account}_{cost_type}.png")
