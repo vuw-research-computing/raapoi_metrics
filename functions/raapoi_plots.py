@@ -54,6 +54,20 @@ def preprocess_data(df):
 
     return df
 
+def generate_plot(df: pd.DataFrame, title: str, subtitle: str, filename: str, width: Optional[int] = 20) -> None:
+    plot = (
+        ggplot(df, aes(x='YearMonth', y='UniqueUsers', fill='UniqueUsers'))
+        + geom_bar(stat='identity', width=width)
+        + scale_fill_gradient(low="blue", high="red")
+        + labs(x='Date', y='Unique Users', title=title, subtitle=subtitle, fill='UniqueUsers')
+        + theme(axis_text_x=element_text(angle=45, hjust=1),  # rotate x-axis labels 45 degrees
+                plot_title=element_text(hjust=0.5),  # center title
+                plot_subtitle=element_text(hjust=0.5))  # center subtitle
+        + guides(fill=False)  # remove color bar
+    )
+
+    # Save the plot
+    ggsave(plot, filename=filename, format='png', dpi=300)
 
 def plot_unique_users_per_month(df):
     
@@ -79,46 +93,39 @@ def plot_unique_users_per_month(df):
 
     for account in accounts:
         account_data = unique_users_per_month[unique_users_per_month['Account'] == account]
-
-        plot = (
-            ggplot(account_data, aes(x='YearMonth', y='UniqueUsers', fill='UniqueUsers'))
-            + geom_bar(stat='identity', width=20)  # adjust the width as needed
-            + scale_fill_gradient(low = "blue", high = "red")
-            + labs(x='Date', y='Unique Users', title=f'Rāpoi', subtitle=f'Unique {account} Users Per Month', fill='UniqueUsers')  
-            + theme(axis_text_x = element_text(angle = 45, hjust = 1),  # rotate x-axis labels 45 degrees
-                    plot_title=element_text(hjust=0.5),  # center title
-                    plot_subtitle=element_text(hjust=0.5))  # center subtitle
-            + guides(fill=False)  # remove color bar
-        )
+        generate_plot(account_data, 'Rāpoi', f'Unique {account} Users Per Month', f'plots/monthly_users/{account}_users_per_month.png')
         
-        # Save the plot
-        ggsave(plot, filename=f'plots/monthly_users/{account}_users_per_month.png', format='png', dpi=300)
-
-
     # Produce the total unique users per month
     start_time = time.time()
     # For the total unique users per month, group the original DataFrame by Year and Month and sum the unique users
-    total_users_per_month = df.groupby(['YearMonth'])['UniqueUsers'].sum().reset_index()
+    total_users_per_month = unique_users_per_month.groupby(['YearMonth'])['UniqueUsers'].sum().reset_index()
     end_time = time.time()
     elapsed_time = end_time - start_time
     print('Creating total unique users took:', elapsed_time, 'seconds')
 
-    total_plot = (
-        ggplot(total_users_per_month, aes(x='YearMonth', y='UniqueUsers', fill='UniqueUsers'))
-        + geom_bar(stat='identity', width=20)  # adjust the width as needed
-        + scale_fill_gradient(low="blue", high="red")
-        + labs(x='Date', y='Unique Users', title='Rāpoi', subtitle='Total Unique Users Per Month', fill='UniqueUsers')
-        + theme(axis_text_x=element_text(angle=45, hjust=1),  # rotate x-axis labels 45 degrees
-                plot_title=element_text(hjust=0.5),  # center title
-                plot_subtitle=element_text(hjust=0.5))  # center subtitle
-        + guides(fill=False)  # remove color bar
-    )
-
-    # Save the total plot
-    ggsave(total_plot, filename='plots/monthly_users/total_users_per_month.png', format='png', dpi=300)
+    generate_plot(total_users_per_month, 'Rāpoi', 'Total Unique Users Per Month', 'plots/monthly_users/total_users_per_month.png')
 
 def plot_unique_users_per_year(df):
     unique_users_per_year = df.groupby(['Account', 'Year', 'User']).size().reset_index().rename(columns={0:'count'})
 
     # Now group by 'Account' and 'Year' and count unique 'User'
     unique_users_per_year = unique_users_per_year.groupby(['Account', 'Year']).size().reset_index().rename(columns={0:'UniqueUsers'})
+
+    accounts = unique_users_per_year['Account'].unique()
+
+    for account in accounts:
+        account_data = unique_users_per_year[unique_users_per_year['Account'] == account]
+        generate_plot(account_data, 'Rāpoi', f'Unique {account} Users Per Year', f'plots/yearly_users/{account}_users_per_year.png')
+    
+
+    # Produce the total unique users per year
+    start_time = time.time()
+    # For the total unique users per year, group the original DataFrame by Year and Month and sum the unique users
+    total_users_per_year = unique_users_per_year.groupby(['Year'])['UniqueUsers'].sum().reset_index()
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print('Creating total unique users took:', elapsed_time, 'seconds')
+
+    # For total users
+    generate_plot(total_users_per_year, 'Rāpoi', 'Total Unique Users Per Year', 'plots/yearly_users/total_users_per_year.png')
+
