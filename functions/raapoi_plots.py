@@ -147,10 +147,12 @@ def plot_costs_per_year(df):
     # Convert 'Year' to integer, then to string, and convert to datetime
     cost_per_year['Year'] = pd.to_datetime(cost_per_year['Year'].astype(int).astype(str))
 
-    accounts = cost_per_year['Account'].unique()
+    
 
     # Capitalize 'Account'
     cost_per_year['Account'] = cost_per_year['Account'].str.upper()
+
+    accounts = cost_per_year['Account'].unique()
 
     # Ensure the directories exist
     os.makedirs('plots/yearly_costs/aws/', exist_ok=True)
