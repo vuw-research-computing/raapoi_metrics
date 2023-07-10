@@ -1,5 +1,5 @@
 import pandas as pd
-from functions.raapoi_plots import preprocess_data plot_unique_users_per_month plot_unique_users_per_year
+from functions.raapoi_plots import preprocess_data, plot_unique_users_per_month, plot_unique_users_per_year
 
 
 def main():

@@ -1,5 +1,6 @@
 import os
 import time
+import pandas as pd
 from plotnine import (
     aes,
     element_text,
