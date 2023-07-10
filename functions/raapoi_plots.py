@@ -56,6 +56,11 @@ def preprocess_data(df):
     return df
 
 def generate_plot(df: pd.DataFrame, x_column: str, title: str, subtitle: str, filename: str, width: Optional[int] = 20) -> None:
+    if x_column == 'Year':
+        width = 0.7  # A value of 0.7 is commonly used when you have yearly data.
+    elif x_column == 'YearMonth':
+        width = 20  # This width can be adjusted based on how wide you want the bars to be.
+
     plot = (
         ggplot(df, aes(x=x_column, y='UniqueUsers', fill='UniqueUsers'))
         + geom_bar(stat='identity', width=width)
@@ -69,6 +74,7 @@ def generate_plot(df: pd.DataFrame, x_column: str, title: str, subtitle: str, fi
 
     # Save the plot
     ggsave(plot, filename=filename, format='png', dpi=300)
+
 
 def plot_unique_users_per_month(df):
     
