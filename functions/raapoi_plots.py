@@ -199,6 +199,7 @@ def plot_costs_per_month(df):
 
     for account in accounts:
         account_data = cost_per_month[cost_per_month['Account'] == account]
+        print(account_data)
 
         for cost_type in ['aws_cost', 'nesi_cost']:
             cost_title = 'AWS cost' if cost_type == 'aws_cost' else 'NeSi cost'
