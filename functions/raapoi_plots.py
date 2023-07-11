@@ -204,9 +204,10 @@ def plot_costs_per_month(df):
             cost_title = 'AWS cost' if cost_type == 'aws_cost' else 'NeSi cost'
             cost_subtitle = 'Based on 2020 best matched instance for given core count' if cost_type == 'aws_cost' else ' '
             save_folder = 'plots/monthly_costs/aws/' if cost_type == 'aws_cost' else 'plots/monthly_costs/nesi/'
-
-            generate_cost_plot(account_data, 'Month', cost_type, 'Cost', f'{cost_title} for {account} Per Month', cost_subtitle, f"{save_folder}{account}_{cost_type}.png")
-
+            try:
+                generate_cost_plot(account_data, 'Month', cost_type, 'Cost', f'{cost_title} for {account} Per Month', cost_subtitle, f"{save_folder}{account}_{cost_type}.png")
+            except:
+                print(f'failed to plot mmontly costs for for {account}')
     # Produce the total costs per month
     total_aws_cost_per_month = cost_per_month.groupby(['YearMonth'])['aws_cost'].sum().reset_index()
     total_nesi_cost_per_month = cost_per_month.groupby(['YearMonth'])['nesi_cost'].sum().reset_index()
