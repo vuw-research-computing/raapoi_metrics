@@ -181,6 +181,40 @@ def plot_costs_per_year(df):
     generate_cost_plot(total_nesi_cost_per_year, 'Year', 'nesi_cost', 'Cost', 'Total NeSi Cost Per Year', '', 'plots/yearly_costs/nesi/total_cost.png')
 
 
+# def plot_costs_per_month(df):
+#     # Group by 'Account', 'Year' and 'Month' and sum 'aws_cost' and 'nesi_cost'
+#     cost_per_month = df.groupby(['Account', 'Year', 'Month']).agg({'aws_cost': 'sum', 'nesi_cost': 'sum'}).reset_index()
+
+#     # Convert 'Year' and 'Month' to integer, then to string, combine them, and convert to datetime
+#     cost_per_month['YearMonth'] = pd.to_datetime(cost_per_month['Year'].astype(int).astype(str) + '-' + cost_per_month['Month'].astype(int).astype(str))
+
+#     # Capitalize 'Account'
+#     cost_per_month['Account'] = cost_per_month['Account'].str.upper()
+
+#     accounts = cost_per_month['Account'].unique()
+
+#     # Ensure the directories exist
+#     os.makedirs('plots/monthly_costs/aws/', exist_ok=True)
+#     os.makedirs('plots/monthly_costs/nesi/', exist_ok=True)
+
+#     for account in accounts:
+#         account_data = cost_per_month[cost_per_month['Account'] == account]
+
+#         for cost_type in ['aws_cost', 'nesi_cost']:
+#             cost_title = 'AWS cost' if cost_type == 'aws_cost' else 'NeSi cost'
+#             cost_subtitle = 'Based on 2020 best matched instance for given core count' if cost_type == 'aws_cost' else ' '
+#             save_folder = 'plots/monthly_costs/aws/' if cost_type == 'aws_cost' else 'plots/monthly_costs/nesi/'
+#             try:
+#                 generate_cost_plot(account_data, 'Month', cost_type, 'Cost', f'{cost_title} for {account} Per Month', cost_subtitle, f"{save_folder}{account}_{cost_type}.png")
+#             except:
+#                 print(f'failed to plot mmontly costs for for {account}')
+#     # Produce the total costs per month
+#     total_aws_cost_per_month = cost_per_month.groupby(['YearMonth'])['aws_cost'].sum().reset_index()
+#     total_nesi_cost_per_month = cost_per_month.groupby(['YearMonth'])['nesi_cost'].sum().reset_index()
+
+#     # For total costs
+#     generate_cost_plot(total_aws_cost_per_month, 'YearMonth', 'aws_cost', 'Cost', 'Total AWS Cost Per Month', 'Based on 2020 best matched instance for given core count', 'plots/monthly_costs/aws/total_cost.png', date_breaks='1 month')
+#     generate_cost_plot(total_nesi_cost_per_month, 'YearMonth', 'nesi_cost', 'Cost', 'Total NeSi Cost Per Month', '', 'plots/monthly_costs/nesi/total_cost.png', date_breaks='1 month')
 def plot_costs_per_month(df):
     # Group by 'Account', 'Year' and 'Month' and sum 'aws_cost' and 'nesi_cost'
     cost_per_month = df.groupby(['Account', 'Year', 'Month']).agg({'aws_cost': 'sum', 'nesi_cost': 'sum'}).reset_index()
@@ -191,7 +225,6 @@ def plot_costs_per_month(df):
     # Capitalize 'Account'
     cost_per_month['Account'] = cost_per_month['Account'].str.upper()
 
-    accounts = cost_per_month['Account'].unique()
 
     # Ensure the directories exist
     os.makedirs('plots/monthly_costs/aws/', exist_ok=True)
@@ -199,20 +232,24 @@ def plot_costs_per_month(df):
 
     for account in accounts:
         account_data = cost_per_month[cost_per_month['Account'] == account]
-        print(account_data)
 
         for cost_type in ['aws_cost', 'nesi_cost']:
             cost_title = 'AWS cost' if cost_type == 'aws_cost' else 'NeSi cost'
             cost_subtitle = 'Based on 2020 best matched instance for given core count' if cost_type == 'aws_cost' else ' '
             save_folder = 'plots/monthly_costs/aws/' if cost_type == 'aws_cost' else 'plots/monthly_costs/nesi/'
-            try:
-                generate_cost_plot(account_data, 'Month', cost_type, 'Cost', f'{cost_title} for {account} Per Month', cost_subtitle, f"{save_folder}{account}_{cost_type}.png")
-            except:
-                print(f'failed to plot mmontly costs for for {account}')
-    # Produce the total costs per month
-    total_aws_cost_per_month = cost_per_month.groupby(['YearMonth'])['aws_cost'].sum().reset_index()
-    total_nesi_cost_per_month = cost_per_month.groupby(['YearMonth'])['nesi_cost'].sum().reset_index()
 
-    # For total costs
-    generate_cost_plot(total_aws_cost_per_month, 'YearMonth', 'aws_cost', 'Cost', 'Total AWS Cost Per Month', 'Based on 2020 best matched instance for given core count', 'plots/monthly_costs/aws/total_cost.png', date_breaks='1 month')
-    generate_cost_plot(total_nesi_cost_per_month, 'YearMonth', 'nesi_cost', 'Cost', 'Total NeSi Cost Per Month', '', 'plots/monthly_costs/nesi/total_cost.png', date_breaks='1 month')
+            plot = (
+                ggplot(account_data, aes(x='YearMonth', y=cost_type, fill=cost_type))
+                + geom_bar(stat='identity', width=20)  # adjust the width as needed
+                + scale_fill_gradient(low = "blue", high = "red")
+                + labs(x='Date', y='Cost', title=f'{cost_title} for {account} Per Month', subtitle=cost_subtitle, fill=cost_type)
+                + theme(axis_text_x = element_text(angle = 45, hjust = 1),  # rotate x-axis labels 45 degrees
+                        plot_title=element_text(hjust=0.5),  # center title
+                        plot_subtitle=element_text(hjust=0.5))  # center subtitle
+                + guides(fill=False)  # remove color bar
+            )
+            
+            print(plot)
+
+            # Save the plot
+            plot.save(f"{save_folder}{account}_{cost_type}.png")
