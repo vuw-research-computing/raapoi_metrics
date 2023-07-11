@@ -224,7 +224,7 @@ def plot_costs_per_month(df):
 
     # Capitalize 'Account'
     cost_per_month['Account'] = cost_per_month['Account'].str.upper()
-
+    accounts = cost_per_month['Account'].unique()
 
     # Ensure the directories exist
     os.makedirs('plots/monthly_costs/aws/', exist_ok=True)
