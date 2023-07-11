@@ -213,8 +213,8 @@ def plot_costs_per_month(df):
     total_nesi_cost_per_month = cost_per_month.groupby(['YearMonth'])['nesi_cost'].sum().reset_index()
 
     # For total costs
-    generate_cost_plot(total_aws_cost_per_month, 'YearMonth', 'aws_cost', 'Cost', 'Total AWS Cost Per Month', 'Based on 2020 best matched instance for given core count', 'plots/monthly_costs/aws/total_cost.png', date_breaks='1 month')
-    generate_cost_plot(total_nesi_cost_per_month, 'YearMonth', 'nesi_cost', 'Cost', 'Total NeSi Cost Per Month', '', 'plots/monthly_costs/nesi/total_cost.png', date_breaks='1 month')
+    generate_cost_plot(total_aws_cost_per_month, 'YearMonth', 'aws_cost', 'Cost', 'Total AWS Cost Per Month', 'Based on 2020 best matched instance for given core count', 'plots/monthly_costs/aws/total_cost.png')
+    generate_cost_plot(total_nesi_cost_per_month, 'YearMonth', 'nesi_cost', 'Cost', 'Total NeSi Cost Per Month', '', 'plots/monthly_costs/nesi/total_cost.png')
 # def plot_costs_per_month(df):
 #     # Group by 'Account', 'Year' and 'Month' and sum 'aws_cost' and 'nesi_cost'
 #     cost_per_month = df.groupby(['Account', 'Year', 'Month']).agg({'aws_cost': 'sum', 'nesi_cost': 'sum'}).reset_index()
