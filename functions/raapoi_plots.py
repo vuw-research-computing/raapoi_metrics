@@ -117,13 +117,8 @@ def plot_unique_users_per_month(df):
         generate_plot(account_data, 'YearMonth', 'Rāpoi', f'Unique {account} Users Per Month', f'plots/monthly_users/{account}_users_per_month.png')
         
     # Produce the total unique users per month
-    start_time = time.time()
     # For the total unique users per month, group the original DataFrame by Year and Month and sum the unique users
     total_users_per_month = unique_users_per_month.groupby(['YearMonth'])['UniqueUsers'].sum().reset_index()
-    
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    print('Creating total unique users took:', elapsed_time, 'seconds')
 
     generate_plot(total_users_per_month, 'YearMonth', 'Rāpoi', 'Total Unique Users Per Month', 'plots/monthly_users/total_users_per_month.png')
 
@@ -142,14 +137,9 @@ def plot_unique_users_per_year(df):
         account_data = unique_users_per_year[unique_users_per_year['Account'] == account]
         generate_plot(account_data, 'Year', 'Rāpoi', f'Unique {account} Users Per Year', f'plots/yearly_users/{account}_users_per_year.png')
     
-
     # Produce the total unique users per year
-    start_time = time.time()
     # For the total unique users per year, group the original DataFrame by Year and Month and sum the unique users
     total_users_per_year = unique_users_per_year.groupby(['Year'])['UniqueUsers'].sum().reset_index()
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    print('Creating total unique users took:', elapsed_time, 'seconds')
 
     # For total users
     generate_plot(total_users_per_year, 'Year', 'Rāpoi', 'Total Unique Users Per Year', 'plots/yearly_users/total_users_per_year.png')
