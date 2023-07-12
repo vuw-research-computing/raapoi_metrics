@@ -34,21 +34,24 @@ def gen_webpage():
     """
 
     for section in sections:
-        html += f"<h2>{section.capitalize()}</h2>"
-        html += '<div class="row">'
-        for file in os.listdir(os.path.join(img_dir, section)):
-            if file.endswith(".png"):
-                html += f"""
-                <div class="col-sm-4">
-                <div class="card">
-                    <img class="card-img-top" src="/plots/{section}/{file}" alt="{file}">
-                    <div class="card-body">
-                    <p class="card-text">{file}</p>
-                    </div>
-                </div>
-                </div>
-                """
-        html += '</div>'
+        for root, dirs, files in os.walk(os.path.join(img_dir, section)):
+            if files:  # only process directories with files
+                html += f"<h2>{os.path.basename(root)}</h2>"
+                html += '<div class="row">'
+                for file in files:
+                    if file.endswith(".png"):
+                        rel_dir = os.path.relpath(root, img_dir)
+                        html += f"""
+                        <div class="col-sm-4">
+                        <div class="card">
+                            <img class="card-img-top" src="/{rel_dir}/{file}" alt="{file}">
+                            <div class="card-body">
+                            <p class="card-text">{file}</p>
+                            </div>
+                        </div>
+                        </div>
+                        """
+                html += '</div>'
 
     html += """
     </div>
