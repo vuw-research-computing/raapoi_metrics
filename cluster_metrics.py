@@ -11,7 +11,8 @@ functions_dict = {
     "merge_slurm_data": merge_slurm_data,
     "grab_slurm_data": grab_slurm_data,
     "split_data_nprocs": split_data_nprocs,
-    "plot_all_slurm": plot_all_slurm
+    "plot_all_slurm": plot_all_slurm,
+    "gen_webpage": gen_webpage
 }
 
 class CustomHelpFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
