@@ -20,6 +20,10 @@ def process_file(filename, aws_cost_data):
     return dfout_test, dfout
 
 def multiCollate(linear=False):
+    '''
+    Run as a slurm job - multi processes the nprocs_split slurm data files into a single csv.
+    The processing includes estimating an equivalent AWS and NeSi cost
+    '''
     # Get a list of all the csv files
     files = [f for f in os.listdir('nprocs_split') if f.endswith('.csv')]
 
