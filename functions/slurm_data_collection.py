@@ -95,5 +95,3 @@ def merge_slurm_data():
     elapsed_time = end_time - start_time
 
     print(f"\nJoining the files took: {elapsed_time:.2f} seconds.")
-
-merge_slurm_data()
