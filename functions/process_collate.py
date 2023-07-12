@@ -57,6 +57,3 @@ def multiCollate(linear=False):
     #dfout_test_all.to_csv('dfout_test_all.csv', index=False)
     dfout_all.to_csv('raapoi_data.csv', index=False)
 
-
-if __name__ == '__main__':
-    multiCollate()
