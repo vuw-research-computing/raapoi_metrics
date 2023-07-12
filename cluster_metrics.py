@@ -3,6 +3,7 @@ import inspect
 from functions.process_collate import multiCollate
 from functions.slurm_data_collection import merge_slurm_data, grab_slurm_data, split_data_nprocs
 from functions.raapoi_plots import plot_all_slurm
+from functions.gen_webpage import gen_webpage
 
 # Dictionary of available functions to run
 functions_dict = {
