@@ -1,4 +1,5 @@
 import argparse
+import inspect
 from functions.process_collate import multiCollate
 from functions.slurm_data_collection import merge_slurm_data, grab_slurm_data, split_data_nprocs
 from functions.raapoi_plots import plot_all_slurm
@@ -16,8 +17,11 @@ if __name__ == '__main__':
     # Create an ArgumentParser object
     parser = argparse.ArgumentParser(description="Run specified function")
 
-    # Add a positional command line argument for the function name
-    parser.add_argument("function", choices=functions_dict.keys(), help="Name of the function to run")
+    # Get docstrings for each function and add them as choices for the command line argument
+    function_choices = {k: inspect.getdoc(v) for k, v in functions_dict.items()}
+    parser.add_argument("function", choices=function_choices.keys(), 
+                        help="Name of the function to run. The functions do the following:\n" +
+                        "\n".join(f"{k}: {v}" for k, v in function_choices.items()))
 
     # Parse command line arguments
     args = parser.parse_args()

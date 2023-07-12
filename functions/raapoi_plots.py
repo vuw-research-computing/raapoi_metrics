@@ -255,6 +255,9 @@ def plot_costs_per_month(df):
 #             plot.save(f"{save_folder}{account}_{cost_type}.png")
 
 def plot_all_slurm():
+    '''
+    Preprocess and then plot all the raapoi user and estimated cost data.
+    '''
     df = pd.read_csv('raapoi_data.csv', dtype={15: str})
     df = preprocess_data(df)
     plot_unique_users_per_month(df)
