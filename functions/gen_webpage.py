@@ -41,7 +41,7 @@ def gen_webpage():
                 html += f"""
                 <div class="col-sm-4">
                 <div class="card">
-                    <img class="card-img-top" src="/{img_dir}/{section}/{file}" alt="{file}">
+                    <img class="card-img-top" src="{img_dir}/{section}/{file}" alt="{file}">
                     <div class="card-body">
                     <p class="card-text">{file}</p>
                     </div>
