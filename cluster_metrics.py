@@ -17,14 +17,18 @@ class CustomHelpFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDe
     pass
 
 if __name__ == '__main__':
-    # Create an ArgumentParser object
-    parser = argparse.ArgumentParser(formatter_class=CustomHelpFormatter, description="Run specified function")
-
     # Get docstrings for each function and add them as choices for the command line argument
-    function_choices = {k: inspect.getdoc(v) for k, v in functions_dict.items()}
-    parser.add_argument("function", choices=function_choices.keys(), 
-                        help="Name of the function to run. The functions do the following:\n" +
-                        "\n".join(f"{k}: {v}" for k, v in function_choices.items() if v is not None))
+    function_descriptions = "\n".join(f"{k}: {v}" for k, v in 
+                                      {k: inspect.getdoc(v) for k, v in functions_dict.items()}.items() 
+                                      if v is not None)
+    # Create an ArgumentParser object with a description that includes the function descriptions
+    parser = argparse.ArgumentParser(
+        formatter_class=CustomHelpFormatter, 
+        description=f"Run specified function.\nThe functions do the following:\n{function_descriptions}"
+    )
+
+    parser.add_argument("function", choices=functions_dict.keys(), 
+                        help="Name of the function to run")
 
     # Parse command line arguments
     args = parser.parse_args()
