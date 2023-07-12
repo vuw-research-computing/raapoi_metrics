@@ -10,7 +10,14 @@ end_date = datetime.now()  # Replace with your desired end date
 force_retrieve = False  # Set to True to force re-gathering the data
 
 
-def grab_slurm_data(start_date, end_date, force_retrieve):
+def grab_slurm_data(force_retrieve=False):
+    '''
+    Get the raw slurm data.  This can take a long time to run. Currently hardcodes dates.
+    Will skip complete months that have already been gathered.
+    '''
+
+    start_date = datetime(2019, 1, 1)  # Replace with your desired start date
+    end_date = datetime.now()  # Replace with your desired end date
     current_start_date = start_date
     current_end_date = current_start_date + relativedelta(months=1)
 
@@ -56,6 +63,11 @@ def grab_slurm_data(start_date, end_date, force_retrieve):
 
 
 def merge_slurm_data():
+    '''
+    This merges all the gathered data into a single large csv file.
+    The current incomplete month is also merged, old incompletes are
+    removed.
+    '''
 
     output_file = "slurm_data/all_data.csv"  # Output file path
     directory = "slurm_data"  # Directory containing the monthly CSV files
@@ -98,6 +110,12 @@ def merge_slurm_data():
     print(f"\nJoining the files took: {elapsed_time:.2f} seconds.")
 
 def split_data_nprocs():
+    '''
+    Splits the large all merged slurm csv file into roughly even sized files.
+    Care is taken to keep job steps in the same file
+    Currently splits into 100 files.
+    '''
+    
     # Define the path to your data and the number of processes
     data_path = "slurm_data/all_data.csv"
     nprocs = 100 #Define your number of processes
