@@ -66,15 +66,17 @@ def merge_slurm_data():
 
     # Check for any "complete" files and remove corresponding "incomplete" files
     for csv_file in csv_files:
-        month_str, status = csv_file.split("_")[:2]
-        print(f'month str = {month_str} status = {status}')
+        # Remove .csv extension and split at the last underscore
+        month_str, status = os.path.splitext(csv_file)[0].rsplit("_", 1)
+        status = status.rstrip('.csv')  # remove '.csv' from status
         if status == "complete":
             incomplete_file_path = os.path.join(directory, f"{month_str}_incomplete.csv")
-            print(f'looking for {incomplete_file_path}')
             if os.path.exists(incomplete_file_path):
                 os.remove(incomplete_file_path)
-                csv_files.remove(f"{month_str}_incomplete.csv")  # Remove the file from our list too
                 print(f"Removed file: {incomplete_file_path}")
+
+    # Refresh the list of CSV files after removing "incomplete" files
+    csv_files = sorted([file for file in os.listdir(directory) if file.endswith(".csv")])
 
     # Now proceed to join files
     with open(output_file, "w") as outfile:
@@ -87,7 +89,7 @@ def merge_slurm_data():
                 outfile.write(infile.read())
 
             # Print the order of the file being processed
-            print(f"Processing file {index+1}/{len(csv_files)-1}: {csv_file}")
+            print(f"Processing file {index+1}/{len(csv_files): {csv_file}")
 
     end_time = time.time()
     elapsed_time = end_time - start_time
