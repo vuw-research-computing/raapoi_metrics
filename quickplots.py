@@ -3,7 +3,7 @@ from functions.raapoi_plots import preprocess_data, plot_unique_users_per_month,
 
 
 def main():
-    df = pd.read_csv('dfout_all.csv', dtype={15: str})
+    df = pd.read_csv('raapoi_data.csv', dtype={15: str})
     df = preprocess_data(df)
     plot_unique_users_per_month(df)
     plot_unique_users_per_year(df)

@@ -51,7 +51,7 @@ def multiCollate(linear=False):
 
     # Save the combined dataframes
     #dfout_test_all.to_csv('dfout_test_all.csv', index=False)
-    dfout_all.to_csv('dfout_all.csv', index=False)
+    dfout_all.to_csv('raapoi_data.csv', index=False)
 
 
 if __name__ == '__main__':

@@ -24,7 +24,7 @@ def preprocess_data(df):
     Do some preprocessing of the input data, such as fixing account allocations
     '''
 
-    # df = pd.read_csv('../dfout_all.csv', dtype={15: str})
+    # df = pd.read_csv('../raapoi_data.csv', dtype={15: str})
 
     #Fix jiaowa account info to ferrier rather than sbs
     mask = (df['User'] == 'jiaowa') & (df['Account'] == 'sbs')
