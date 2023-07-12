@@ -69,6 +69,7 @@ def merge_slurm_data():
         month_str, status = csv_file.split("_")[:2]
         if status == "complete":
             incomplete_file_path = os.path.join(directory, f"{month_str}_incomplete.csv")
+            print(f'looking for {incomplete_file_path}')
             if os.path.exists(incomplete_file_path):
                 os.remove(incomplete_file_path)
                 csv_files.remove(f"{month_str}_incomplete.csv")  # Remove the file from our list too
