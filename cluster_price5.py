@@ -89,7 +89,7 @@ def merge_slurm_data():
                 outfile.write(infile.read())
 
             # Print the order of the file being processed
-            print(f"Processing file {index+1}/{len(csv_files): {csv_file}")
+            print(f"Processing file {index+1}/{len(csv_files)}: {csv_file}")
 
     end_time = time.time()
     elapsed_time = end_time - start_time
