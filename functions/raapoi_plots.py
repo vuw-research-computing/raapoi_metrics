@@ -109,6 +109,23 @@ def generate_cost_plot(df: pd.DataFrame, x_column: str, cost_type: str, y_label:
     # Save the plot
     plot.save(filename)
 
+def generate_cost_plot_account(df, x_column, y_column, y_label, title, subtitle, filename):
+    combined_title = title + "\n" + subtitle
+    max_y = df[y_column].max()
+
+    plot = (
+        ggplot(df, aes(x=x_column, y=y_column, fill=y_column))
+        + geom_col()
+        + scale_fill_gradient(low="blue", high="red")
+        + labs(x='Account', y=y_label, title=combined_title, fill=y_label)
+        + theme(axis_text_x=element_text(angle=45, hjust=1),  # rotate x-axis labels 45 degrees
+                plot_title=element_text(hjust=0.5))  # center title
+        + guides(fill=False)  # remove color bar  
+        + ylim(0, max_y)  # set y-axis limits
+    )
+
+    # Save the plot
+    ggsave(plot, filename=filename, format='png', dpi=500)
 
 def plot_unique_users_per_month(df):
     
@@ -177,6 +194,31 @@ def plot_unique_users_per_account_each_year(df):
     for year in years:
         yearly_data = unique_users_per_year_account[unique_users_per_year_account['Year'] == year]
         generate_plot_accounts(yearly_data, 'Account', 'Rāpoi', f'Unique Users Per School in {year}', f'plots/yearly_users_per_school/users_per_school_{year}.png')
+
+def plot_costs_per_account_per_year(df):
+    # Group by 'Account' and 'Year' and sum 'aws_cost' and 'nesi_cost'
+    cost_per_year = df.groupby(['Account', 'Year']).agg({'aws_cost': 'sum', 'nesi_cost': 'sum'}).reset_index()
+
+    # Convert 'Year' to integer
+    cost_per_year['Year'] = cost_per_year['Year'].astype(int)
+    # Capitalize 'Account'
+    cost_per_year['Account'] = cost_per_year['Account'].str.upper()
+
+    # Ensure the directories exist
+    os.makedirs('plots/yearly_costs_per_account/aws/', exist_ok=True)
+    os.makedirs('plots/yearly_costs_per_account/nesi/', exist_ok=True)
+
+    years = cost_per_year['Year'].unique()
+    for year in years:
+        yearly_data = cost_per_year[cost_per_year['Year'] == year]
+
+        for cost_type in ['aws_cost', 'nesi_cost']:
+            cost_title = 'AWS equivalent cost' if cost_type == 'aws_cost' else 'NeSi equivalent cost'
+            cost_subtitle = 'Based on 2020 best matched instance for given core count' if cost_type == 'aws_cost' else '0.06c per core hour'
+            save_folder = 'plots/yearly_costs_per_account/aws/' if cost_type == 'aws_cost' else 'plots/yearly_costs_per_account/nesi/'
+
+            generate_cost_plot_account(yearly_data, 'Account', cost_type, 'Cost', f'{cost_title} for Year {year}', cost_subtitle, f"{save_folder}{year}_{cost_type}.png")
+
 
 
 def plot_costs_per_year(df):
@@ -259,6 +301,7 @@ def plot_all_slurm():
     # print(df.head())
 
     plot_unique_users_per_account_each_year(df)
+    plot_costs_per_account_per_year(df)
     # plot_unique_users_per_month(df)
     # plot_unique_users_per_year(df)
     # plot_costs_per_year(df)
