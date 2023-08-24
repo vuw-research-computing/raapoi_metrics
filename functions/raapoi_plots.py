@@ -205,8 +205,8 @@ def plot_costs_per_account_per_year(df):
     cost_per_year['Account'] = cost_per_year['Account'].str.upper()
 
     # Ensure the directories exist
-    os.makedirs('plots/yearly_costs_per_account/aws/', exist_ok=True)
-    os.makedirs('plots/yearly_costs_per_account/nesi/', exist_ok=True)
+    os.makedirs('plots/yearly_costs_per_school/aws/', exist_ok=True)
+    os.makedirs('plots/yearly_costs_per_school/nesi/', exist_ok=True)
 
     years = cost_per_year['Year'].unique()
     for year in years:
