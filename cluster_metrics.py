@@ -18,9 +18,9 @@ functions_dict = {
 # Add the ordered list
 recommended_order = [
     "grab_slurm_data",
-    "split_data_nprocs",
-    "multiCollate",
     "merge_slurm_data",
+    "split_data_nprocs",
+    "multiCollate - as nprocs slurm job",
     "plot_all_slurm",
     "gen_webpage"
 ]
