@@ -70,8 +70,8 @@ def generate_plot(df: pd.DataFrame, x_column: str, title: str, subtitle: str, fi
         + labs(x='Date', y='Unique Users', title=combined_title, fill='UniqueUsers')
         + theme(axis_text_x=element_text(angle=45, hjust=1),  # rotate x-axis labels 45 degrees
                 plot_title=element_text(hjust=0.5),  # center title
-        + guides(fill=False)  # remove color bar
         )
+        + guides(fill=False)  # remove color bar  
     )
 
     # Save the plot
