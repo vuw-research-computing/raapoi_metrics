@@ -15,6 +15,20 @@ functions_dict = {
     "gen_webpage": gen_webpage
 }
 
+# Add the ordered list
+recommended_order = [
+    "grab_slurm_data",
+    "split_data_nprocs",
+    "multiCollate",
+    "merge_slurm_data",
+    "plot_all_slurm",
+    "gen_webpage"
+]
+
+# Create the recommended order string for the description
+order_str = "\nRecommended Order of Execution:\n" + "\n".join([f"{idx + 1}. {name}" for idx, name in enumerate(recommended_order)])
+
+
 class CustomHelpFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
     pass
 
@@ -26,7 +40,7 @@ if __name__ == '__main__':
     # Create an ArgumentParser object with a description that includes the function descriptions
     parser = argparse.ArgumentParser(
         formatter_class=CustomHelpFormatter, 
-        description=f"Run specified function.\nThe functions do the following:\n\n{function_descriptions}"
+        description=f"Run specified function.\nThe functions do the following:\n\n{function_descriptions}\n\n{order_str}"
     )
 
     parser.add_argument("function", choices=functions_dict.keys(), 
