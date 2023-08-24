@@ -84,7 +84,7 @@ def generate_plot_accounts(df: pd.DataFrame, x_column: str, title: str, subtitle
         ggplot(df, aes(x=x_column, y='UniqueUsers', fill='UniqueUsers'))
         + geom_col()
         + scale_fill_gradient(low="blue", high="red")
-        + labs(x='Date', y='Unique Users', title=combined_title, fill='UniqueUsers')
+        + labs(x='School', y='Unique Users', title=combined_title, fill='UniqueUsers')
         + theme(axis_text_x=element_text(angle=45, hjust=1),  # rotate x-axis labels 45 degrees
                 plot_title=element_text(hjust=0.5))  # center title
         + guides(fill=False)  # remove color bar  
@@ -168,7 +168,6 @@ def plot_unique_users_per_account_each_year(df):
 
     # Now group by 'Year' and 'Account' and count unique 'User'
     unique_users_per_year_account = unique_users_per_year_account.groupby(['Year', 'Account']).size().reset_index().rename(columns={0:'UniqueUsers'})
-
     # Create the directory if it doesn't already exist
     if not os.path.exists('plots/yearly_users_per_account'):
         os.makedirs('plots/yearly_users_per_account/')
@@ -177,7 +176,7 @@ def plot_unique_users_per_account_each_year(df):
 
     for year in years:
         yearly_data = unique_users_per_year_account[unique_users_per_year_account['Year'] == year]
-        generate_plot_accounts(yearly_data, 'Account', 'Rāpoi', f'Unique Users Per Account in {year}', f'plots/yearly_users_per_account/users_per_account_{year}.png')
+        generate_plot_accounts(yearly_data, 'Account', 'Rāpoi', f'Unique Users Per School in {year}', f'plots/yearly_users_per_school/users_per_school_{year}.png')
 
 
 def plot_costs_per_year(df):
