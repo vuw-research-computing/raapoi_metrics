@@ -5,8 +5,6 @@ from dateutil.relativedelta import relativedelta
 import time
 import csv
 
-start_date = datetime(2023, 5, 1)  # Replace with your desired start date
-end_date = datetime.now()  # Replace with your desired end date
 force_retrieve = False  # Set to True to force re-gathering the data
 
 
