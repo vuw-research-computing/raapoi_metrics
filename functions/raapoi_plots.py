@@ -60,12 +60,14 @@ def generate_plot(df: pd.DataFrame, x_column: str, title: str, subtitle: str, fi
         width = 0.7  # A value of 0.7 is commonly used when you have yearly data.
     elif x_column == 'YearMonth':
         width = 20  # This width can be adjusted based on how wide you want the bars to be.
+    
+    combined_title = title + "\n" + subtitle
 
     plot = (
         ggplot(df, aes(x=x_column, y='UniqueUsers', fill='UniqueUsers'))
         + geom_bar(stat='identity', width=width)
         + scale_fill_gradient(low="blue", high="red")
-        + labs(x='Date', y='Unique Users', title=title, subtitle=subtitle, fill='UniqueUsers')
+        + labs(x='Date', y='Unique Users', title=combined_title, fill='UniqueUsers')
         + theme(axis_text_x=element_text(angle=45, hjust=1),  # rotate x-axis labels 45 degrees
                 plot_title=element_text(hjust=0.5),  # center title
                 plot_subtitle=element_text(hjust=0.5))  # center subtitle
@@ -76,11 +78,12 @@ def generate_plot(df: pd.DataFrame, x_column: str, title: str, subtitle: str, fi
     ggsave(plot, filename=filename, format='png', dpi=500)
 
 def generate_cost_plot(df: pd.DataFrame, x_column: str, cost_type: str, y_label: str, title: str, subtitle: str, filename: str, date_breaks='1 year') -> None:
+    combined_title = title + "\n" + subtitle
     plot = (
         ggplot(df, aes(x=x_column, y=cost_type, fill=cost_type))
         + geom_col()  # using geom_col instead of geom_bar with stat='identity'
         + scale_fill_gradient(low = "blue", high = "red")
-        + labs(x='Year', y=y_label, title=title, subtitle=subtitle, fill=cost_type)
+        + labs(x='Year', y=y_label, title=combined_title, fill=cost_type)
         + theme(axis_text_x = element_text(angle = 45, hjust = 1),  # rotate x-axis labels 45 degrees
                 plot_title=element_text(hjust=0.5),  # center title
                 plot_subtitle=element_text(hjust=0.5))  # center subtitle
