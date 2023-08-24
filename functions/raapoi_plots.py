@@ -147,24 +147,23 @@ def plot_unique_users_per_year(df):
     # For total users
     generate_plot(total_users_per_year, 'Year', 'Rāpoi', 'Total Unique Users Per Year', 'plots/yearly_users/total_users_per_year.png')
 
-def plot_users_per_account_per_year(df):
+def plot_unique_users_per_account_each_year(df):
+    # Group by 'Year', 'Account' and 'User' to count unique users for each combination
+    unique_users_per_year_account = df.groupby(['Year', 'Account', 'User']).size().reset_index().rename(columns={0:'count'})
 
-    # Group by 'Year', 'Account', 'User' to get the unique users
-    unique_users_per_year = df.groupby(['Year', 'Account', 'User']).size().reset_index().rename(columns={0: 'count'})
-
-    # Group primarily by 'Year' then 'Account'
-    unique_users_per_account = unique_users_per_year.groupby(['Year', 'Account']).size().reset_index().rename(columns={0: 'UniqueUsers'})
-
-    years = unique_users_per_account['Year'].unique()
+    # Now group by 'Year' and 'Account' and count unique 'User'
+    unique_users_per_year_account = unique_users_per_year_account.groupby(['Year', 'Account']).size().reset_index().rename(columns={0:'UniqueUsers'})
 
     # Create the directory if it doesn't already exist
-    if not os.path.exists('plots/account_users'):
-        os.makedirs('plots/account_users/')
+    if not os.path.exists('plots/yearly_users_per_account'):
+        os.makedirs('plots/yearly_users_per_account/')
+
+    years = unique_users_per_year_account['Year'].unique()
 
     for year in years:
-        yearly_data = unique_users_per_account[unique_users_per_account['Year'] == year]
+        yearly_data = unique_users_per_year_account[unique_users_per_year_account['Year'] == year]
+        generate_plot(yearly_data, 'Account', 'Rāpoi', f'Unique Users Per Account in {year}', f'plots/yearly_users_per_account/users_per_account_{year}.png')
 
-        generate_plot(yearly_data, 'Account', 'Rāpoi', f'Unique Users in {year}', f'plots/account_users/users_in_{year}.png')
 
 def plot_costs_per_year(df):
     # Group by 'Account' and 'Year' and sum 'aws_cost' and 'nesi_cost'
@@ -243,9 +242,9 @@ def plot_all_slurm():
     df = pd.read_csv('raapoi_data.csv', dtype={15: str})
     df = preprocess_data(df)
     
-    print(df.head())
+    # print(df.head())
 
-    # plot_users_per_account_per_year(df)
+    plot_unique_users_per_account_each_year(df)
     # plot_unique_users_per_month(df)
     # plot_unique_users_per_year(df)
     # plot_costs_per_year(df)
