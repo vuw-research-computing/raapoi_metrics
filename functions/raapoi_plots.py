@@ -184,6 +184,10 @@ def plot_unique_users_per_account_each_year(df):
 
     # Now group by 'Year' and 'Account' and count unique 'User'
     unique_users_per_year_account = unique_users_per_year_account.groupby(['Year', 'Account']).size().reset_index().rename(columns={0:'UniqueUsers'})
+    
+    # Capitalize 'Account'
+    cost_per_year['Account'] = cost_per_year['Account'].str.upper()
+    
     # Create the directory if it doesn't already exist
     if not os.path.exists('plots/yearly_users_per_school'):
         os.makedirs('plots/yearly_users_per_school/')
@@ -198,8 +202,8 @@ def plot_costs_per_account_per_year(df):
     # Group by 'Account' and 'Year' and sum 'aws_cost' and 'nesi_cost'
     cost_per_year = df.groupby(['Account', 'Year']).agg({'aws_cost': 'sum', 'nesi_cost': 'sum'}).reset_index()
 
-    # Convert 'Year' to integer
-    cost_per_year['Year'] = cost_per_year['Year'].astype(int)
+    # # Convert 'Year' to integer
+    # cost_per_year['Year'] = cost_per_year['Year'].astype(int)
     # Capitalize 'Account'
     cost_per_year['Account'] = cost_per_year['Account'].str.upper()
 
