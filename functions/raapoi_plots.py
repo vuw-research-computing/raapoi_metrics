@@ -186,7 +186,7 @@ def plot_unique_users_per_account_each_year(df):
     unique_users_per_year_account = unique_users_per_year_account.groupby(['Year', 'Account']).size().reset_index().rename(columns={0:'UniqueUsers'})
     
     # Capitalize 'Account'
-    cost_per_year['Account'] = cost_per_year['Account'].str.upper()
+    unique_users_per_year_account['Account'] = unique_users_per_year_account['Account'].str.upper()
     
     # Create the directory if it doesn't already exist
     if not os.path.exists('plots/yearly_users_per_school'):
