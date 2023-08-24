@@ -121,7 +121,6 @@ def generate_cost_plot_account(df, x_column, y_column, y_label, title, subtitle,
         + theme(axis_text_x=element_text(angle=45, hjust=1),  # rotate x-axis labels 45 degrees
                 plot_title=element_text(hjust=0.5))  # center title
         + guides(fill=False)  # remove color bar  
-        + ylim(0, max_y)  # set y-axis limits
     )
 
     # Save the plot
