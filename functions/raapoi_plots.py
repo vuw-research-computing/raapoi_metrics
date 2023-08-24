@@ -73,7 +73,7 @@ def generate_plot(df: pd.DataFrame, x_column: str, title: str, subtitle: str, fi
     )
 
     # Save the plot
-    ggsave(plot, filename=filename, format='png', dpi=300)
+    ggsave(plot, filename=filename, format='png', dpi=500)
 
 def generate_cost_plot(df: pd.DataFrame, x_column: str, cost_type: str, y_label: str, title: str, subtitle: str, filename: str, date_breaks='1 year') -> None:
     plot = (
@@ -144,7 +144,24 @@ def plot_unique_users_per_year(df):
     # For total users
     generate_plot(total_users_per_year, 'Year', 'Rāpoi', 'Total Unique Users Per Year', 'plots/yearly_users/total_users_per_year.png')
 
+def plot_users_per_account_per_year(df):
 
+    # Group by 'Year', 'Account', 'User' to get the unique users
+    unique_users_per_year = df.groupby(['Year', 'Account', 'User']).size().reset_index().rename(columns={0: 'count'})
+
+    # Group primarily by 'Year' then 'Account'
+    unique_users_per_account = unique_users_per_year.groupby(['Year', 'Account']).size().reset_index().rename(columns={0: 'UniqueUsers'})
+
+    years = unique_users_per_account['Year'].unique()
+
+    # Create the directory if it doesn't already exist
+    if not os.path.exists('plots/account_users'):
+        os.makedirs('plots/account_users/')
+
+    for year in years:
+        yearly_data = unique_users_per_account[unique_users_per_account['Year'] == year]
+
+        generate_plot(yearly_data, 'Account', 'Rāpoi', f'Unique Users in {year}', f'plots/account_users/users_in_{year}.png')
 
 def plot_costs_per_year(df):
     # Group by 'Account' and 'Year' and sum 'aws_cost' and 'nesi_cost'
@@ -166,8 +183,8 @@ def plot_costs_per_year(df):
         account_data = cost_per_year[cost_per_year['Account'] == account]
 
         for cost_type in ['aws_cost', 'nesi_cost']:
-            cost_title = 'AWS cost' if cost_type == 'aws_cost' else 'NeSi cost'
-            cost_subtitle = 'Based on 2020 best matched instance for given core count' if cost_type == 'aws_cost' else ' '
+            cost_title = 'AWS equivalent cost' if cost_type == 'aws_cost' else 'NeSi equivalent cost'
+            cost_subtitle = 'Based on 2020 best matched instance for given core count' if cost_type == 'aws_cost' else '0.06c per core hour'
             save_folder = 'plots/yearly_costs/aws/' if cost_type == 'aws_cost' else 'plots/yearly_costs/nesi/'
 
             generate_cost_plot(account_data, 'Year', cost_type, 'Cost', f'{cost_title} for {account} Per Year', cost_subtitle, f"{save_folder}{account}_{cost_type}.png")
@@ -201,8 +218,8 @@ def plot_costs_per_month(df):
         account_data = cost_per_month[cost_per_month['Account'] == account]
 
         for cost_type in ['aws_cost', 'nesi_cost']:
-            cost_title = 'AWS cost' if cost_type == 'aws_cost' else 'NeSi cost'
-            cost_subtitle = 'Based on 2020 best matched instance for given core count' if cost_type == 'aws_cost' else ' '
+            cost_title = 'AWS equivalent cost' if cost_type == 'aws_cost' else 'NeSi equivalent cost'
+            cost_subtitle = 'Based on 2020 best matched instance for given core count' if cost_type == 'aws_cost' else '0.06c per core hour'
             save_folder = 'plots/monthly_costs/aws/' if cost_type == 'aws_cost' else 'plots/monthly_costs/nesi/'
             try:
                 generate_cost_plot(account_data, 'YearMonth', cost_type, 'Cost', f'{cost_title} for {account} Per Month', cost_subtitle, f"{save_folder}{account}_{cost_type}.png")
