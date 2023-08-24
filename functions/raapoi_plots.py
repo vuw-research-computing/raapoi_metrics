@@ -71,7 +71,7 @@ def generate_plot(df: pd.DataFrame, x_column: str, title: str, subtitle: str, fi
         + theme(axis_text_x=element_text(angle=45, hjust=1),  # rotate x-axis labels 45 degrees
                 plot_title=element_text(hjust=0.5),  # center title
         + guides(fill=False)  # remove color bar
-    )
+    ))
 
     # Save the plot
     ggsave(plot, filename=filename, format='png', dpi=500)
@@ -87,7 +87,7 @@ def generate_cost_plot(df: pd.DataFrame, x_column: str, cost_type: str, y_label:
                 plot_title=element_text(hjust=0.5),  # center title
         + guides(fill=False)  # remove color bar
         + scale_x_date(date_breaks=date_breaks, labels=date_format('%Y'))  # set x-axis breaks and labels
-    )
+    ))
 
     # Save the plot
     plot.save(filename)
