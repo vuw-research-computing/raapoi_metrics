@@ -242,7 +242,10 @@ def plot_all_slurm():
     '''
     df = pd.read_csv('raapoi_data.csv', dtype={15: str})
     df = preprocess_data(df)
-    plot_users_per_account_per_year(df)
+    
+    print(df.head())
+
+    # plot_users_per_account_per_year(df)
     # plot_unique_users_per_month(df)
     # plot_unique_users_per_year(df)
     # plot_costs_per_year(df)
