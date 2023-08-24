@@ -70,7 +70,6 @@ def generate_plot(df: pd.DataFrame, x_column: str, title: str, subtitle: str, fi
         + labs(x='Date', y='Unique Users', title=combined_title, fill='UniqueUsers')
         + theme(axis_text_x=element_text(angle=45, hjust=1),  # rotate x-axis labels 45 degrees
                 plot_title=element_text(hjust=0.5),  # center title
-                plot_subtitle=element_text(hjust=0.5))  # center subtitle
         + guides(fill=False)  # remove color bar
     )
 
@@ -86,7 +85,6 @@ def generate_cost_plot(df: pd.DataFrame, x_column: str, cost_type: str, y_label:
         + labs(x='Year', y=y_label, title=combined_title, fill=cost_type)
         + theme(axis_text_x = element_text(angle = 45, hjust = 1),  # rotate x-axis labels 45 degrees
                 plot_title=element_text(hjust=0.5),  # center title
-                plot_subtitle=element_text(hjust=0.5))  # center subtitle
         + guides(fill=False)  # remove color bar
         + scale_x_date(date_breaks=date_breaks, labels=date_format('%Y'))  # set x-axis breaks and labels
     )
