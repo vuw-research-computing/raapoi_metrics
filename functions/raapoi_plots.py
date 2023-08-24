@@ -309,4 +309,3 @@ def plot_all_slurm():
     plot_unique_users_per_year(df)
     plot_costs_per_year(df)
     plot_costs_per_month(df)
-    plot_users_per_account_per_year(df)
