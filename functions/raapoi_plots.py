@@ -186,8 +186,8 @@ def plot_unique_users_per_account_each_year(df):
     # Now group by 'Year' and 'Account' and count unique 'User'
     unique_users_per_year_account = unique_users_per_year_account.groupby(['Year', 'Account']).size().reset_index().rename(columns={0:'UniqueUsers'})
     # Create the directory if it doesn't already exist
-    if not os.path.exists('plots/yearly_users_per_account'):
-        os.makedirs('plots/yearly_users_per_account/')
+    if not os.path.exists('plots/yearly_users_per_school'):
+        os.makedirs('plots/yearly_users_per_school/')
 
     years = unique_users_per_year_account['Year'].unique()
 
@@ -205,8 +205,8 @@ def plot_costs_per_account_per_year(df):
     cost_per_year['Account'] = cost_per_year['Account'].str.upper()
 
     # Ensure the directories exist
-    os.makedirs('plots/yearly_costs_per_school/aws/', exist_ok=True)
-    os.makedirs('plots/yearly_costs_per_school/nesi/', exist_ok=True)
+    os.makedirs('plots/yearly_costs_per_account/aws/', exist_ok=True)
+    os.makedirs('plots/yearly_costs_per_account/nesi/', exist_ok=True)
 
     years = cost_per_year['Year'].unique()
     for year in years:
