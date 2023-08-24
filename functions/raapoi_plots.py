@@ -208,8 +208,8 @@ def plot_costs_per_account_per_year(df):
     cost_per_year['Account'] = cost_per_year['Account'].str.upper()
 
     # Ensure the directories exist
-    os.makedirs('plots/yearly_costs_per_account/aws/', exist_ok=True)
-    os.makedirs('plots/yearly_costs_per_account/nesi/', exist_ok=True)
+    os.makedirs('plots/yearly_costs_per_school/aws/', exist_ok=True)
+    os.makedirs('plots/yearly_costs_per_school/nesi/', exist_ok=True)
 
     years = cost_per_year['Year'].unique()
     for year in years:
@@ -218,7 +218,7 @@ def plot_costs_per_account_per_year(df):
         for cost_type in ['aws_cost', 'nesi_cost']:
             cost_title = 'AWS equivalent cost' if cost_type == 'aws_cost' else 'NeSi equivalent cost'
             cost_subtitle = 'Based on 2020 best matched instance for given core count' if cost_type == 'aws_cost' else '0.06c per core hour'
-            save_folder = 'plots/yearly_costs_per_account/aws/' if cost_type == 'aws_cost' else 'plots/yearly_costs_per_account/nesi/'
+            save_folder = 'plots/yearly_costs_per_school/aws/' if cost_type == 'aws_cost' else 'plots/yearly_costs_per_school/nesi/'
 
             generate_cost_plot_account(yearly_data, 'Account', cost_type, 'Cost', f'{cost_title} for Year {year}', cost_subtitle, f"{save_folder}{year}_{cost_type}.png")
 
