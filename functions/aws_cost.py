@@ -159,15 +159,15 @@ def aws_cost_equiv(row,aws_cost):
     runtime_in_hours = rt_min/60 
 
     #gpu instance check - currently assumes all GPUS are A100's! also caculates nesi cost assuming all gpus are A100's
-    if isinstance(row['AllocGRES'], str) and 'gpu' in row['AllocGRES']:
-        gpu_num = int(row['AllocGRES'].split(':')[1])
+    #if isinstance(row['AllocTRES'], str) and 'gpu' in row['AllocTRES']:
+    #    gpu_num = int(row['AllocTRES'].split(':')[1])
 
-        aws_cost = gpu_num * runtime_in_hours * A100_cost
-        nesi_cost = gpu_num * runtime_in_hours * A100_cost_nesi
-    else:
-        nesi_cost = row['AllocCPUS'] * runtime_in_hours * nesi_cost_per_hour
-        aws_cost = runtime_in_hours * aws_instance.Per_Hour
-        aws_cost = aws_cost * nodes  # we don't need to multiply by nodes for nesi as we're just using all the allocated cores - we're not finding the awkward best matching instance
+    #   aws_cost = gpu_num * runtime_in_hours * A100_cost
+    #   nesi_cost = gpu_num * runtime_in_hours * A100_cost_nesi
+    #else:
+    nesi_cost = row['AllocCPUS'] * runtime_in_hours * nesi_cost_per_hour
+    aws_cost = runtime_in_hours * aws_instance.Per_Hour
+    aws_cost = aws_cost * nodes  # we don't need to multiply by nodes for nesi as we're just using all the allocated cores - we're not finding the awkward best matching instance
 
     if print_cost == True:
         print('AWS_est_cost =  ',aws_cost,'  ',end='')

@@ -68,7 +68,6 @@ def collate_saact(jobs_data, aws_cost_data):
         'AllocCPUS': lambda x: x.iloc[0],
         'TotalCPU': np.max,
         'ReqMem': lambda x: x.iloc[0],
-        'AllocGRES': lambda x: x.iloc[0],
         'State': lambda x: x.iloc[0],
         'End': lambda x: x.iloc[0]
     })

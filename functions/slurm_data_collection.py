@@ -5,7 +5,7 @@ from dateutil.relativedelta import relativedelta
 import time
 import csv
 
-force_retrieve = False  # Set to True to force re-gathering the data
+force_retrieve = True  # Set to True to force re-gathering the data
 
 
 def grab_slurm_data(force_retrieve=False):
@@ -14,7 +14,7 @@ def grab_slurm_data(force_retrieve=False):
     Will skip complete months that have already been gathered.
     '''
 
-    start_date = datetime(2019, 1, 1)  # Replace with your desired start date
+    start_date = datetime(2024, 5, 12)  # Replace with your desired start date
     end_date = datetime.now()  # Replace with your desired end date
     current_start_date = start_date
     current_end_date = current_start_date + relativedelta(months=1)
@@ -34,7 +34,7 @@ def grab_slurm_data(force_retrieve=False):
             print('Starting date:', start_date_str)
             
             start_time = time.time()
-            job_data_str = subprocess.run(['sacct', '-S', start_date_str, '-E', end_date_str, '--noheader', '--units=M', '--state=BF,CA,CD,DL,F,NF,OOM,PR,TO', '--parsable2', '--allusers', '--format=User,jobid,Elapsed,Timelimit,Start,NNodes,NCPUS,NTasks,MaxRSS,MaxVMSize,Partition,ReqCPUS,AllocCPUS,TotalCPU,CPUtime,ReqMem,AllocGRES,State,End,Account'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+            job_data_str = subprocess.run(['sacct', '-S', start_date_str, '-E', end_date_str, '--noheader', '--units=M', '--state=BF,CA,CD,DL,F,NF,OOM,PR,TO', '--parsable2', '--allusers', '--format=User,jobid,Elapsed,Timelimit,Start,NNodes,NCPUS,NTasks,MaxRSS,MaxVMSize,Partition,ReqCPUS,AllocCPUS,TotalCPU,CPUtime,ReqMem,State,End,Account'], stdout=subprocess.PIPE).stdout.decode('utf-8')
             end_time = time.time()
             elapsed_time = end_time - start_time
             print('Query took:', elapsed_time, 'seconds')
@@ -120,7 +120,7 @@ def split_data_nprocs():
 
     # Define column names
     column_names = ['User', 'jobid', 'Elapsed', 'Timelimit', 'Start', 'NNodes', 'NCPUS', 'NTasks', 'MaxRSS',
-                'MaxVMSize', 'Partition', 'ReqCPUS', 'AllocCPUS', 'TotalCPU', 'CPUtime', 'ReqMem', 'AllocGRES',
+                'MaxVMSize', 'Partition', 'ReqCPUS', 'AllocCPUS', 'TotalCPU', 'CPUtime', 'ReqMem',
                 'State', 'End', 'Account']
 
     # Get the total number of lines in the file
@@ -180,3 +180,7 @@ def split_data_nprocs():
             current_file.close()
 
     print("All files have been written successfully.")
+
+grab_slurm_data(force_retrieve)
+merge_slurm_data()
+split_data_nprocs()
