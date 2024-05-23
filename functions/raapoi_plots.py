@@ -80,6 +80,7 @@ def plot_unique_users_per_month(df):
     
     # Group by 'Account', 'Year', 'Month' and 'User', then count unique 'User'
     unique_users = df.groupby(['Account', 'Year', 'Month', 'User']).size().reset_index().rename(columns={0:'count'})
+    print(unique_users.head())
 
     # Now group by 'Account', 'Year' and 'Month' and count unique 'User'
     unique_users_per_month = unique_users.groupby(['Account', 'Year', 'Month']).size().reset_index().rename(columns={0:'UniqueUsers'})
@@ -223,3 +224,19 @@ def plot_costs_per_month(df):
 
             # Save the plot
         plot.save(f"{save_folder}{account}_{cost_type}.png")
+
+
+def plot_all_slurm():
+    '''
+    Preprocess and then plot all the raapoi user and estimated cost data.
+    '''
+    #df = pd.read_csv('/nfs/scratch/admduggalro/raapoi_metrics/raapoi_data.csv', dtype={15: str})
+    df = pd.read_csv('/home/duggalrohi/private/demo_rohit/raapoi_metrics/raapoi_data.csv')
+    df = preprocess_data(df)
+
+    plot_unique_users_per_month(df)
+    plot_unique_users_per_year(df)
+    plot_costs_per_year(df)
+    plot_costs_per_month(df)
+
+plot_all_slurm()
