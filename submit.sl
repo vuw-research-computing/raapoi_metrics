@@ -15,9 +15,9 @@ module load Python/3.6.8
 # Load Python 3.8.1
 #module load python/3.6.8
 
-# Activate your Python environment
-source /nfs/home/admduggalro/raapoi-users/env/bin/activate
+# Activate Python environment
+# source env/bin/activate
 
 # Run the Python script
-#python slurm_data_collection.py
-python process_collate.py
+python slurm_data_collection.py
+# python process_collate.py
