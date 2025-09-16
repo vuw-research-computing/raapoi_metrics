@@ -1,6 +1,6 @@
 plots/
 *.log
-*.csv
+./*.csv
 *.err
 *.out
 slurm_data/
