@@ -10,7 +10,7 @@ from functions.aws_cost import prepare_aws_cost_data
 def process_file(filename, aws_cost_data):
     df1 = pd.read_csv(f'nprocs_split/{filename}', header=None, delimiter="|", dtype={8: str, 16: str})
 
-    column_names = ['User', 'JobID', 'Elapsed', 'Timelimit', 'Start', 'NNodes', 'NCPUS', 'NTasks', 'MaxRSS',
+    column_names = ['User', 'JobID', 'Submit', 'Elapsed', 'Timelimit', 'Start', 'NNodes', 'NCPUS', 'NTasks', 'MaxRSS',
                 'MaxVMSize', 'Partition', 'ReqCPUS', 'AllocCPUS', 'TotalCPU', 'CPUtime', 'ReqMem',
                 'State', 'End', 'Account']
     df1.columns = column_names
@@ -60,5 +60,5 @@ def multiCollate(linear=False):
 
 if __name__ == '__main__':
     multiCollate(linear=False)
-    #multiCollate(linear=True)
+    # multiCollate(linear=True)
     print('Done')
