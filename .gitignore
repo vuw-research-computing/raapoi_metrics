@@ -13,3 +13,4 @@ functions/*.out
 functions/slurm_data/
 functions/nprocs_split/
 .venv/
+.*
