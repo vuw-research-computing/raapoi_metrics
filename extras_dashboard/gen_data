@@ -1,0 +1,176 @@
+#!/usr/bin/env python3
+
+
+import os
+import sys
+import subprocess
+import time
+import datetime
+
+
+
+# Function to get scontrol data
+def get_scontrol_data():
+    """    Retrieve node data using the scontrol command. 
+    """
+    # Run the scontrol command
+    cmd = "scontrol show nodes"
+    try:
+        # Check if scontrol is available
+        result = subprocess.run(cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Failed to run command '{cmd}': {e.stderr}")
+    
+    # Parse the output
+    output = result.stdout.strip("\n\n")
+    if not output:
+        raise ValueError("No data returned from scontrol command.")
+    
+    # Split the output into lines
+    lines = output.split("\n\n")
+    if not lines:
+        raise ValueError("No nodes found in scontrol output.")
+    
+    # Initialize a list to hold the node data
+    node_data = []
+    
+    # Process each node's data
+    for line in lines:
+        node_info = {}
+        for item in line.split():
+            if '=' in item:
+                key, value = item.split('=', 1)
+                if key in ["CfgTRES"]:
+                    if not value:
+                        keys = ["Cfgbilling", "Cfgcpu", "Cfgmem", "Cfggres/gpu"]
+                        for key in keys:
+                            node_info[key] = 0
+                    # Handle cases where value is a comma-separated list
+                    if ',' in value:
+                        values = value.split(',')
+                        for val in values:
+                            sub_key, sub_value = val.split('=', 1)
+                            if sub_key in ["cpu", "mem", "gres/gpu"]:
+                                sub_key = "Cfg"+str(sub_key)
+                                node_info[sub_key] = float(sub_value.replace('M', '')) if 'M' in sub_value else (float(sub_value.replace('G', ''))*1024 if 'G' in sub_value else float(sub_value))
+                            elif sub_key == "billing":
+                                node_info['Cfgbilling'] = float(sub_value)
+                elif key in ["AllocTRES"]:
+                    if not value:
+                        keys = ["Allocbilling", "Alloccpu", "Allocmem", "Allocgres/gpu"]
+                        for key in keys:
+                            node_info[key] = 0
+                    # Handle cases where value is a comma-separated list
+                    if ',' in value:
+                        values = value.split(',')
+                        for val in values:
+                            sub_key, sub_value = val.split('=', 1)
+                            if sub_key in ["cpu", "mem", "gres/gpu"]:
+                                sub_key = "Alloc"+str(sub_key)
+                                node_info[sub_key] = float(sub_value.replace('M', '')) if 'M' in sub_value else (float(sub_value.replace('G', ''))*1024 if 'G' in sub_value else float(sub_value))
+                            elif sub_key == "billing":
+                                node_info['Allocbilling'] = float(sub_value)
+                            else:
+                                node_info[sub_key] = sub_value
+                
+                else:
+                    node_info[key] = value
+            else:
+                # Handle cases where there is no '='
+                node_info[item] = None
+        
+        # Append the node info to the list
+        node_data.append(node_info)
+    
+    return node_data
+
+# Function to convert node data to DataFrame
+# def convert_to_dataframe(node_data):
+#     """
+#     Select only the relevant columns from the node data and convert it to a DataFrame.
+#     The relevant columns are:
+#     - NodeName, Cfgcpu, Cfgmem, Cfggres/gpu, Alloccpu, Allocmem, Allocgres/gpu
+#     """
+#     relevant_columns = [
+#         "NodeName", "Cfgcpu", "Cfgmem", "Cfggres/gpu",
+#         "Alloccpu", "Allocmem", "Allocgres/gpu"
+#     ]
+#     # Create a DataFrame from the node data
+#     df = pandas.DataFrame(node_data)
+#     # Select only the relevant columns
+#     df = df[relevant_columns]
+    
+#     # Fill NaN values with 0
+#     df.fillna(0, inplace=True)
+#     # Convert columns to appropriate types
+#     df["Cfgcpu"] = df["Cfgcpu"].astype(int)
+#     df["Cfgmem"] = df["Cfgmem"].astype(int)
+#     df["Cfggres/gpu"] = df["Cfggres/gpu"].astype(int)
+#     df["Alloccpu"] = df["Alloccpu"].astype(int)
+#     df["Allocmem"] = df["Allocmem"].astype(int)
+#     df["Allocgres/gpu"] = df["Allocgres/gpu"].astype(int)
+#     return df
+
+# Function to write each node's data to a file
+def write_node_data_to_file(node_data):
+    """
+    Write each node's data to a file.
+    The file will contain the node name and its configuration and allocation details.
+    """
+    # if file does not exist, create it
+
+    for node in node_data:
+        # Get the current timestamp
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Create a directory for the node data if it doesn't exist
+        node_name = node.get("NodeName", "unknown_node")
+        directory = f"/path/to/node_data/"
+        os.makedirs(directory, exist_ok=True)
+        
+        # Write the node data to a file
+        file_path = os.path.join(directory, f"{node_name}_data.csv")
+        with open(file_path, 'a') as f:
+            # Write the header if the file is empty
+            if os.stat(file_path).st_size == 0:
+                header = "Cfgcpu,Cfgmem,Cfggres/gpu,Alloccpu,Allocmem,Allocgres/gpu,Timestamp\n"
+                f.write(header)
+            # Write the node data
+            # Ensure all keys are present in the node dictionary
+            node.setdefault('Cfgcpu', 0)
+            node.setdefault('Cfgmem', 0)
+            node.setdefault('Cfggres/gpu', 0)   
+            node.setdefault('Alloccpu', 0)
+            node.setdefault('Allocmem', 0)
+            node.setdefault('Allocgres/gpu', 0)
+
+            line = f"{node.get('Cfgcpu', 0)},{node.get('Cfgmem', 0)},{node.get('Cfggres/gpu', 0)},{node.get('Alloccpu', 0)},{node.get('Allocmem', 0)},{node.get('Allocgres/gpu', 0)},{timestamp}\n"
+            f.write(line)
+
+
+# Main function to execute the script
+def main():
+    """
+    Main function to execute the script.
+    It retrieves the node data using scontrol, converts it to a DataFrame,
+    and prints the DataFrame.
+    """
+    try:
+        # Get the node data
+        node_data = get_scontrol_data()
+        
+        # Convert the node data to a DataFrame
+        # df = convert_to_dataframe(node_data)
+        
+        # Print the DataFrame
+        # print(df)
+        
+        # Write each node's data to a file
+        write_node_data_to_file(node_data)
+        
+        
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)    
+        
+main()

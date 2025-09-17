@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Get the hostname (short or full; change as needed)
+HOSTNAME=$(hostname)
+
+# Output file named after the host
+LOGFILE="/path/to/gpu_data/gpu_stats_${HOSTNAME}.csv"
+
+# Write CSV header if file doesn't exist
+if [ ! -f "$LOGFILE" ]; then
+    echo "Timestamp,Index,Name,Utilization_GPU,Utilization_Memory,Memory_Used,Memory_Total,Temperature,GPU_Clock,Memory_Clock,Power_Draw" >> "$LOGFILE"
+fi
+
+# Get current timestamp
+timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+
+# Query GPU stats using nvidia-smi
+nvidia-smi --query-gpu=index,name,utilization.gpu,utilization.memory,memory.used,memory.total,temperature.gpu,clocks.sm,clocks.mem,power.draw \
+           --format=csv,noheader,nounits | while IFS=',' read -r index name util_gpu util_mem mem_used mem_total temp clk_gpu clk_mem power
+do
+    echo "$timestamp,$index,$name,$util_gpu,$util_mem,$mem_used,$mem_total,$temp,$clk_gpu,$clk_mem,$power" >> "$LOGFILE"
+done

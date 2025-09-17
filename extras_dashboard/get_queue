@@ -1,0 +1,15 @@
+#!/usr/bin/bash
+
+# If file does not exist, create it
+
+LOG_FILE="/path/to/queue.csv"
+if [ ! -f "$LOG_FILE" ]; then
+    echo "Timestamp,Pending,Running" > "$LOG_FILE"
+fi
+
+# Get current date and time
+CURRENT_DATE=$(date +%Y-%m-%d)
+CURRENT_TIME=$(date +%H:%M:%S)  
+
+# Log the usage in CSV format
+echo "$CURRENT_DATE $CURRENT_TIME,$(squeue --noheader --format="%t" | awk '{if ($1 == "PD") p++; else if ($1 == "R") r++} END {print p "," r}')" >> "$LOG_FILE"

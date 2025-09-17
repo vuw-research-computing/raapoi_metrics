@@ -1,0 +1,81 @@
+#!/bin/bash
+
+# Variables
+TEMP_DIR="/tmp/$USER"
+#LOG_FILE=$(mktemp "$TEMP_DIR/resource_usage_XXXXXX.csv")
+LOG_FILE="$TEMP_DIR/logon_mem_swp_cpu.csv"
+ADMIN_EMAIL="raapoi-admin@vuw.ac.nz"
+
+#Define thresholds
+THRESHOLD_CPU=80
+THRESHOLD_MEM=88
+THRESHOLD_SWAP=80  # Swap usage threshold
+THRESHOLD_LOAD=2.00
+
+# Check if the log file exists; if not, create it and add headers
+if [ ! -f "$LOG_FILE" ]; then
+    echo "Date,Time,CPU_Usage(%),Memory_Usage(%),Swap_Usage(%)" > "$LOG_FILE"
+fi
+
+# Get Memory usage from /proc/meminfo
+MEM_TOTAL=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+MEM_FREE=$(grep MemFree /proc/meminfo | awk '{print $2}')
+MEM_USAGE=$(echo "scale=2; 100 - ($MEM_FREE / $MEM_TOTAL * 100)" | bc)
+
+# Get Swap usage from /proc/meminfo
+SWAP_TOTAL=$(grep SwapTotal /proc/meminfo | awk '{print $2}')
+SWAP_FREE=$(grep SwapFree /proc/meminfo | awk '{print $2}')
+if [ "$SWAP_TOTAL" -gt 0 ]; then
+    SWAP_USAGE=$(echo "scale=2; 100 - ($SWAP_FREE / $SWAP_TOTAL * 100)" | bc)
+else
+    SWAP_USAGE=0
+fi
+
+# Get CPU usage from /proc/stat
+# Read initial values
+CPU=($(head -n 1 /proc/stat))
+IDLE_TIME=${CPU[4]}
+TOTAL_TIME=0
+for VALUE in "${CPU[@]:1}"; do
+    TOTAL_TIME=$((TOTAL_TIME + VALUE))
+done
+
+# Sleep for 1 second to get the next CPU reading
+sleep 1
+
+# Read values again
+CPU=($(head -n 1 /proc/stat))
+IDLE_TIME_2=${CPU[4]}
+TOTAL_TIME_2=0
+for VALUE in "${CPU[@]:1}"; do
+    TOTAL_TIME_2=$((TOTAL_TIME_2 + VALUE))
+done
+
+# Calculate CPU usage
+IDLE_DELTA=$((IDLE_TIME_2 - IDLE_TIME))
+TOTAL_DELTA=$((TOTAL_TIME_2 - TOTAL_TIME))
+
+if [ $TOTAL_DELTA -eq 0 ]; then
+    CPU_USAGE=0
+else
+    CPU_USAGE=$(echo "scale=2; 100 * ($TOTAL_DELTA - $IDLE_DELTA) / $TOTAL_DELTA" | bc)
+fi
+
+# Read load average from /proc/loadavg
+LOADAVG=$(awk '{print $1}' /proc/loadavg)
+SHOWTOP=`top -b -n 1 | head -30`
+
+# Get current date and time
+DATE=$(date +"%Y-%m-%d")
+TIME=$(date +"%H:%M:%S")
+
+# Log the usage in CSV format
+#echo "$DATE,$TIME,$CPU_USAGE,$MEM_USAGE,$SWAP_USAGE" >> "$LOG_FILE"
+
+# Alert if usage is above threshold
+if (( $(echo "$CPU_USAGE > $THRESHOLD_CPU" | bc -l) )) || \
+   (( $(echo "$MEM_USAGE > $THRESHOLD_MEM" | bc -l) )) || \
+   (( $(echo "$LOADAVG > $THRESHOLD_LOAD" | bc -l) )) || \
+   (( $(echo "$SWAP_USAGE > $THRESHOLD_SWAP" | bc -l) )); then
+  echo -e "$DATE $TIME: High resource usage detected. CPU: $CPU_USAGE%, Memory: $MEM_USAGE%, Swap: $SWAP_USAGE%, LoadAvg: $LOADAVG%\n $SHOWTOP\n" | mailx -s "Rāpoi: Resource Usage Alert" $ADMIN_EMAIL
+fi

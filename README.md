@@ -8,4 +8,6 @@
 > [!NOTE]
 > `functions` directory has other scripts, e.g., to generate webpage, get extra plots, etc.
 
+> `extras_dashboard` has custom built dashboard as an R Shiny App.
+
 

@@ -1,0 +1,4 @@
+*/15 * * * * /path/to/gen_data >> /path/to/gen_data.log 2>&1
+*/15 * * * * /path/to/get_queue >> /path/to/gen_queue.log 2>&1
+# Goes on gpu nodes
+*/15 * * * * /path/to/gpu_stats_logger >> /path/to/gpu_cron.log 2>&1
