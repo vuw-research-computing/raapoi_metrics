@@ -1,6 +1,7 @@
 plots/
 *.log
 ./*.csv
+*.ipynb_checkpoints
 *.png
 *.err
 *.out
